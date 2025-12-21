@@ -89,8 +89,8 @@ export function LandingPage({
               </div>
 
               {/* Premium Live Stats */}
-              <div className="pt-12">
-                <div className="grid grid-cols-3 gap-8">
+              <div className="pt-8 sm:pt-12">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8">
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     <div className="relative bg-white/60 backdrop-blur-md border border-white/40 p-6 rounded-2xl text-center lg:text-left shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
