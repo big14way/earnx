@@ -893,14 +893,16 @@ export const useEarnX = () => {
           invoiceData.documentHash || ''
         ] as const;
 
-        // Submit to blockchain contract with proper gas limit
+        // Submit to blockchain contract with high gas limit for complex operations
+        // The submitInvoice function does: storage writes + verification module call + CCIP cross-chain attempt
+        // This requires significant gas on Mantle network
         const submitTx = await walletClient.writeContract({
           address: CONTRACT_ADDRESSES.PROTOCOL as `0x${string}`,
           abi: EarnXProtocolABI,
           functionName: 'submitInvoice',
           args: contractArgs,
           account: address as `0x${string}`,
-          gas: BigInt(160000000), // 160M gas - same as USDC approval requirement
+          gas: BigInt(500000000), // 500M gas - required for invoice submission with verification and CCIP
         });
 
         const receipt = await publicClient.waitForTransactionReceipt({
