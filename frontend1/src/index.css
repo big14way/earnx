@@ -51,8 +51,360 @@
   .text-gradient {
     @apply bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent;
   }
-  
+
   .shadow-glow {
     box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+}
+
+/* ============================================
+   MOBILE-FIRST RESPONSIVE DESIGN FOR AFRICA
+   Optimized for low-bandwidth & mobile devices
+   ============================================ */
+
+/* Touch-friendly tap targets (minimum 44px) */
+@layer components {
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .mobile-card {
+    @apply p-4 sm:p-6 rounded-xl sm:rounded-2xl;
+  }
+
+  .mobile-button {
+    @apply px-4 py-3 sm:px-6 sm:py-4 text-sm sm:text-base min-h-[44px];
+  }
+
+  .mobile-input {
+    @apply px-3 py-3 sm:px-4 sm:py-3 text-base sm:text-sm min-h-[44px];
+    /* Prevent zoom on iOS */
+    font-size: 16px;
+  }
+
+  .mobile-heading {
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  .mobile-subheading {
+    @apply text-lg sm:text-xl md:text-2xl;
+  }
+
+  .mobile-text {
+    @apply text-sm sm:text-base;
+  }
+
+  .mobile-caption {
+    @apply text-xs sm:text-sm;
+  }
+}
+
+/* Mobile-optimized grid layouts */
+@layer utilities {
+  .mobile-grid-1 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6;
+  }
+
+  .mobile-grid-2 {
+    @apply grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4;
+  }
+
+  .mobile-stack {
+    @apply flex flex-col sm:flex-row gap-3 sm:gap-4;
+  }
+
+  .mobile-padding {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  .mobile-section {
+    @apply py-8 sm:py-12 lg:py-16;
+  }
+}
+
+/* Reduce animations on low-power devices */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Optimize for slow connections - reduce blur effects */
+@media (prefers-reduced-data: reduce) {
+  .backdrop-blur-xl,
+  .backdrop-blur-lg,
+  .backdrop-blur-md,
+  .backdrop-blur-sm {
+    backdrop-filter: none !important;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+  }
+}
+
+/* High contrast for outdoor visibility (common in Africa) */
+@media (prefers-contrast: high) {
+  :root {
+    --text-primary: #000000;
+    --bg-primary: #ffffff;
+    --color-primary: #0047ab;
+  }
+
+  .dark {
+    --text-primary: #ffffff;
+    --bg-primary: #000000;
+  }
+}
+
+/* Small mobile devices (320px - 375px) */
+@media (max-width: 374px) {
+  html {
+    font-size: 14px;
+  }
+
+  .text-6xl, .text-7xl, .text-8xl {
+    @apply text-3xl;
+  }
+
+  .text-4xl, .text-5xl {
+    @apply text-2xl;
+  }
+
+  .px-10, .px-8, .px-6 {
+    @apply px-3;
+  }
+
+  .py-5, .py-6 {
+    @apply py-3;
+  }
+
+  .gap-8, .gap-6 {
+    @apply gap-3;
+  }
+}
+
+/* Standard mobile (375px - 639px) */
+@media (min-width: 375px) and (max-width: 639px) {
+  .text-6xl, .text-7xl, .text-8xl {
+    @apply text-4xl;
+  }
+
+  .text-4xl, .text-5xl {
+    @apply text-2xl;
+  }
+}
+
+/* Portrait tablet optimization */
+@media (min-width: 640px) and (max-width: 767px) and (orientation: portrait) {
+  .grid-cols-3 {
+    @apply grid-cols-2;
+  }
+}
+
+/* Landscape mobile - hide decorative elements */
+@media (max-height: 500px) and (orientation: landscape) {
+  .animate-float,
+  .animate-float-delayed,
+  .blur-xl,
+  .blur-2xl {
+    display: none;
+  }
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+  .mobile-safe {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  nav {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Bottom navigation for mobile (common pattern in Africa apps) */
+@layer components {
+  .mobile-bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 z-50;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .mobile-bottom-nav-item {
+    @apply flex flex-col items-center justify-center py-2 px-3 text-xs font-medium text-gray-600;
+  }
+
+  .mobile-bottom-nav-item.active {
+    @apply text-blue-600;
+  }
+}
+
+/* Offline indicator */
+@layer components {
+  .offline-banner {
+    @apply fixed top-0 left-0 right-0 bg-yellow-500 text-yellow-900 text-center py-2 text-sm font-medium z-[100];
+  }
+}
+
+/* Loading states optimized for slow connections */
+@layer components {
+  .skeleton-mobile {
+    @apply animate-pulse bg-gray-200 rounded;
+  }
+
+  .loading-spinner-mobile {
+    @apply w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin;
+  }
+}
+
+/* Form optimizations for mobile */
+@layer components {
+  /* Larger touch areas for select dropdowns */
+  select.mobile-select {
+    @apply appearance-none bg-white border border-gray-300 rounded-xl px-4 py-3 pr-10 text-base min-h-[48px];
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+  }
+
+  /* Prevent zoom on input focus (iOS) */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  @screen sm {
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="tel"],
+    textarea,
+    select {
+      font-size: 14px !important;
+    }
+  }
+}
+
+/* Stats cards - stack on mobile */
+@media (max-width: 639px) {
+  .stats-grid {
+    @apply grid grid-cols-1 gap-3;
+  }
+
+  .stats-grid > div {
+    @apply flex flex-row items-center justify-between p-4;
+  }
+
+  .stats-grid .text-4xl,
+  .stats-grid .text-5xl {
+    @apply text-2xl;
+  }
+}
+
+/* Investment cards - full width on mobile */
+@media (max-width: 639px) {
+  .investment-card {
+    @apply w-full;
+  }
+
+  .investment-card .flex-row {
+    @apply flex-col;
+  }
+
+  .investment-card .gap-6 {
+    @apply gap-3;
+  }
+}
+
+/* Modal optimizations for mobile */
+@layer components {
+  .mobile-modal {
+    @apply fixed inset-0 z-50 flex items-end sm:items-center justify-center;
+  }
+
+  .mobile-modal-content {
+    @apply w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto;
+  }
+
+  .mobile-modal-handle {
+    @apply w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 mb-2 sm:hidden;
+  }
+}
+
+/* African currency display */
+@layer components {
+  .currency-display {
+    @apply font-mono tabular-nums;
+  }
+
+  .currency-african {
+    @apply text-emerald-600 font-semibold;
+  }
+}
+
+/* Progress bars for funding - clearer on mobile */
+@layer components {
+  .funding-progress {
+    @apply h-3 sm:h-2 rounded-full bg-gray-200 overflow-hidden;
+  }
+
+  .funding-progress-bar {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+}
+
+/* Swipeable cards hint */
+@layer components {
+  .swipe-hint {
+    @apply relative overflow-hidden;
+  }
+
+  .swipe-hint::after {
+    content: '';
+    @apply absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none sm:hidden;
+  }
+}
+
+/* Sticky headers for long lists */
+@layer components {
+  .sticky-header {
+    @apply sticky top-16 bg-white/95 backdrop-blur-sm z-10 py-3 -mx-4 px-4 border-b border-gray-100;
+  }
+}
+
+/* Pull to refresh indicator */
+@layer components {
+  .pull-indicator {
+    @apply absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full py-4 transition-transform;
+  }
+}
+
+/* Haptic feedback simulation */
+@layer utilities {
+  .haptic-light {
+    @apply active:scale-[0.98] transition-transform duration-75;
+  }
+
+  .haptic-medium {
+    @apply active:scale-[0.95] transition-transform duration-100;
+  }
+}
+
+/* Network status indicator */
+@layer components {
+  .network-slow {
+    @apply border-2 border-yellow-400;
+  }
+
+  .network-offline {
+    @apply border-2 border-red-400 opacity-75;
   }
 }
