@@ -98,13 +98,16 @@ interface TransactionStatus {
 
 // ✅ FIXED: Helper function to safely check if object is valid opportunity
 const isValidOpportunity = (opp: any): opp is InvestmentOpportunity => {
-  return opp && 
-         typeof opp === 'object' && 
-         typeof opp.id === 'number' && 
-         typeof opp.status === 'number' &&
-         opp.status === 2 && // Only verified invoices
-         typeof opp.remainingFunding === 'number' &&
-         opp.remainingFunding > 0; // Only invoices with remaining funding
+  // Handle both numeric IDs (from blockchain) and string IDs (from hybrid hook like "blockchain-1")
+  const hasValidId = opp && (typeof opp.id === 'number' || typeof opp.id === 'string');
+  // Status can be number (from blockchain) or string (from hybrid hook like 'available')
+  const hasValidStatus = typeof opp.status === 'number' ? opp.status === 2 : opp.status === 'available' || opp.status === 'funding';
+  // Remaining funding can be calculated or direct
+  const hasRemainingFunding = (typeof opp.remainingFunding === 'number' && opp.remainingFunding > 0) ||
+                               (opp.targetFunding && opp.currentFunding &&
+                                parseFloat(opp.targetFunding) > parseFloat(opp.currentFunding));
+
+  return hasValidId && hasValidStatus && hasRemainingFunding;
 };
 
 // ✅ FIXED: Helper function to safely check if object is valid portfolio investment

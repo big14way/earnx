@@ -22,8 +22,120 @@ import EarnXInvestmentModule from '../abis/EarnXInvestmentModule.json';
 import EarnXInvoiceNFT from '../abis/EarnXInvoiceNFT.json';
 import CCIPSourceMinterMantle from '../abis/CCIPSourceMinterMantle.json';
 
-// Use the full MantleEarnXProtocol for complete functionality including Chainlink verification
-const EarnXProtocolABI = MantleEarnXProtocol.abi;
+// Use SimpleEarnXProtocol ABI for faster transactions (no CCIP)
+const SimpleEarnXProtocolABI = [
+  {
+    "inputs": [
+      {"name": "buyer", "type": "address"},
+      {"name": "amount", "type": "uint256"},
+      {"name": "commodity", "type": "string"},
+      {"name": "supplierCountry", "type": "string"},
+      {"name": "buyerCountry", "type": "string"},
+      {"name": "exporterName", "type": "string"},
+      {"name": "buyerName", "type": "string"},
+      {"name": "dueDate", "type": "uint256"},
+      {"name": "documentHash", "type": "string"}
+    ],
+    "name": "submitInvoice",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "invoiceId", "type": "uint256"}],
+    "name": "getInvoice",
+    "outputs": [
+      {
+        "components": [
+          {"name": "id", "type": "uint256"},
+          {"name": "supplier", "type": "address"},
+          {"name": "buyer", "type": "address"},
+          {"name": "amount", "type": "uint256"},
+          {"name": "commodity", "type": "string"},
+          {"name": "supplierCountry", "type": "string"},
+          {"name": "buyerCountry", "type": "string"},
+          {"name": "exporterName", "type": "string"},
+          {"name": "buyerName", "type": "string"},
+          {"name": "dueDate", "type": "uint256"},
+          {"name": "aprBasisPoints", "type": "uint256"},
+          {"name": "status", "type": "uint8"},
+          {"name": "createdAt", "type": "uint256"},
+          {"name": "documentVerified", "type": "bool"},
+          {"name": "targetFunding", "type": "uint256"},
+          {"name": "currentFunding", "type": "uint256"},
+          {"name": "documentHash", "type": "string"},
+          {"name": "riskScore", "type": "uint256"},
+          {"name": "creditRating", "type": "string"}
+        ],
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getProtocolStats",
+    "outputs": [
+      {"name": "totalInvoices", "type": "uint256"},
+      {"name": "verifiedCount", "type": "uint256"},
+      {"name": "rejectedCount", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "invoiceCounter",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [{"name": "", "type": "bool"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"name": "invoiceId", "type": "uint256"},
+      {"name": "amount", "type": "uint256"}
+    ],
+    "name": "investInInvoice",
+    "outputs": [{"name": "", "type": "bool"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "invoiceId", "type": "uint256"}],
+    "name": "getInvoiceInvestments",
+    "outputs": [
+      {
+        "components": [
+          {"name": "investor", "type": "address"},
+          {"name": "amount", "type": "uint256"},
+          {"name": "timestamp", "type": "uint256"}
+        ],
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "investor", "type": "address"}],
+    "name": "getInvestorInvoices",
+    "outputs": [{"name": "", "type": "uint256[]"}],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const;
+
+const EarnXProtocolABI = SimpleEarnXProtocolABI; // Use the simple ABI
 const EarnXPriceManagerABI = ChainlinkEnhancedPriceManager.abi;
 const EarnXVerificationModuleABI = MantleEarnXVerificationModule.abi;
 const EarnXUSDCABI = MantleUSDC.abi;
@@ -86,8 +198,8 @@ const SimpleERC20ABI = [
 
 // 🚀 MANTLE SEPOLIA DEPLOYMENT - SUCCESSFUL CONTRACTS (LIVE)
 const CONTRACT_ADDRESSES = {
-  // Main Protocol Contract - Successfully deployed and verified ✅ DEPLOYED
-  PROTOCOL: "0x95EAb385c669aca31C0d406c270d6EdDFED0D1ee" as const, // MantleEarnXProtocol
+  // Main Protocol Contract - SimpleEarnXProtocol v3 with REAL USDC transfers
+  PROTOCOL: "0x28E9D861Db74153630A85ee6950ab25aF90BF554" as const, // SimpleEarnXProtocol v3 ✅ WITH USDC TRANSFERS
   
   // 🔧 USDC Contract - Working deployed contract
   USDC: "0x211a38792781b2c7a584a96F0e735d56e809fe85" as const, // ✅ WORKING USDC TOKEN
@@ -648,30 +760,73 @@ export const useEarnX = () => {
       setError(null);
 
       const amountWei = parseUnits(amount, 6); // USDC has 6 decimals
-      console.log('💰 Investment amount in wei:', amountWei.toString());
-      
+      const invoiceIdBigInt = BigInt(invoiceId);
+      console.log('💰 Investment details:', {
+        invoiceId: invoiceIdBigInt.toString(),
+        amountWei: amountWei.toString(),
+        amountUSDC: amount
+      });
+
       const investTx = await walletClient.writeContract({
         address: CONTRACT_ADDRESSES.PROTOCOL as `0x${string}`,
         abi: EarnXProtocolABI,
         functionName: 'investInInvoice',
-        args: [invoiceId, amountWei],
+        args: [invoiceIdBigInt, amountWei],
         account: address as `0x${string}`,
-        gas: BigInt(5000000), // 5M gas for investment transactions
+        gas: BigInt(2000000000), // 2B gas - Mantle network needs much higher gas limits for complex operations
       });
 
       console.log('⏳ Waiting for investment transaction confirmation...');
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: investTx,
-        timeout: 60000,
-      });
+      console.log('📝 Transaction hash:', investTx);
+
+      // Try to get receipt with longer timeout and retry logic for Mantle network
+      let receipt;
+      let retryCount = 0;
+      const maxRetries = 5;
+
+      while (retryCount < maxRetries) {
+        try {
+          receipt = await publicClient.waitForTransactionReceipt({
+            hash: investTx,
+            timeout: 120000, // 2 minutes timeout
+            confirmations: 1,
+          });
+          break; // Success, exit loop
+        } catch (receiptError: any) {
+          retryCount++;
+          console.log(`⏳ Retry ${retryCount}/${maxRetries} - waiting for receipt...`);
+
+          if (retryCount >= maxRetries) {
+            // Even if we can't get receipt, the transaction might have succeeded
+            // Return success with the tx hash so user can check on explorer
+            console.log('⚠️ Could not get receipt, but transaction was sent');
+            if (address) {
+              saveTransactionToHistory(address, {
+                hash: investTx,
+                type: 'invest',
+                status: 'pending',
+                amount: amount,
+                currency: 'USDC',
+                invoiceId: invoiceId.toString(),
+                description: `Invested ${amount} USDC in Invoice ${invoiceId} (pending confirmation)`
+              });
+            }
+            await refreshBalance();
+            return { success: true, txHash: investTx };
+          }
+
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+      }
 
       console.log('✅ Investment successful!', {
         invoiceId,
         amount,
         txHash: investTx,
-        gasUsed: receipt.gasUsed?.toString()
+        gasUsed: receipt?.gasUsed?.toString()
       });
-      
+
       // Save to transaction history
       if (address) {
         saveTransactionToHistory(address, {
@@ -681,20 +836,30 @@ export const useEarnX = () => {
           amount: amount,
           currency: 'USDC',
           invoiceId: invoiceId.toString(),
-          blockNumber: receipt.blockNumber?.toString(),
-          gasUsed: receipt.gasUsed?.toString(),
+          blockNumber: receipt?.blockNumber?.toString(),
+          gasUsed: receipt?.gasUsed?.toString(),
           description: `Invested ${amount} USDC in Invoice ${invoiceId}`
         });
       }
-      
+
       // Refresh balance after investment
       await refreshBalance();
-      
+
       return { success: true, txHash: investTx };
-      
+
     } catch (error: any) {
       console.error('❌ Investment failed:', error);
-      const errorMessage = error.message || 'Investment failed';
+      let errorMessage = error.message || 'Investment failed';
+
+      // Provide more helpful error messages
+      if (errorMessage.includes('receipt') || errorMessage.includes('not be found')) {
+        errorMessage = 'Transaction sent but confirmation is taking longer than expected. Please check the explorer for status.';
+      } else if (errorMessage.includes('USDC token not configured')) {
+        errorMessage = 'USDC token not configured on the contract. Please contact support.';
+      } else if (errorMessage.includes('Insufficient USDC')) {
+        errorMessage = 'Insufficient USDC balance or allowance. Please ensure you have approved enough USDC.';
+      }
+
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -881,8 +1046,20 @@ export const useEarnX = () => {
         console.log('✅ Contract is working, total invoices:', protocolStats?.[0]?.toString());
 
         const amountInUSDC = parseUnits(invoiceData.amount || '0', 6);
+
+        // IMPORTANT: buyer cannot be the same as supplier (connected wallet)
+        // Use a demo buyer address if not provided - this is a different address from the supplier
+        const DEMO_BUYER_ADDRESS = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' as `0x${string}`;
+        let buyerAddress = invoiceData.buyer;
+
+        // Validate buyer address
+        if (!buyerAddress || buyerAddress === address || buyerAddress.length < 42) {
+          console.log('⚠️ Invalid or missing buyer address, using demo buyer:', DEMO_BUYER_ADDRESS);
+          buyerAddress = DEMO_BUYER_ADDRESS;
+        }
+
         const contractArgs = [
-          invoiceData.buyer || address,
+          buyerAddress,
           amountInUSDC,
           invoiceData.commodity || 'Trade Finance',
           invoiceData.supplierCountry || 'Unknown',
@@ -890,31 +1067,45 @@ export const useEarnX = () => {
           invoiceData.exporterName || 'Unknown Exporter',
           invoiceData.buyerName || 'Unknown Buyer',
           BigInt(dueDate),
-          invoiceData.documentHash || ''
+          invoiceData.documentHash || 'QmDefault123'
         ] as const;
 
-        // Submit to blockchain contract with high gas limit for complex operations
-        // The submitInvoice function does: storage writes + verification module call + CCIP cross-chain attempt
-        // This requires significant gas on Mantle network
+        console.log('📋 Contract args:', {
+          buyer: buyerAddress,
+          amount: amountInUSDC.toString(),
+          commodity: invoiceData.commodity,
+          dueDate: dueDate,
+          documentHash: invoiceData.documentHash || 'QmDefault123'
+        });
+
+        // Submit to SimpleEarnXProtocol (no CCIP, faster transactions)
+        // Uses ~1.5B gas on Mantle network based on testing
         const submitTx = await walletClient.writeContract({
           address: CONTRACT_ADDRESSES.PROTOCOL as `0x${string}`,
           abi: EarnXProtocolABI,
           functionName: 'submitInvoice',
           args: contractArgs,
           account: address as `0x${string}`,
-          gas: BigInt(500000000), // 500M gas - required for invoice submission with verification and CCIP
+          gas: BigInt(2000000000), // 2B gas - SimpleEarnXProtocol uses ~1.5B
         });
 
         const receipt = await publicClient.waitForTransactionReceipt({
           hash: submitTx,
-          timeout: 30000, // Shorter timeout for blockchain attempt
+          timeout: 60000, // Longer timeout for complex transaction
         });
-        
-        console.log('✅ Blockchain receipt:', receipt.status);
 
-        blockchainSuccess = true;
-        blockchainTxHash = submitTx;
-        console.log('✅ Blockchain submission successful!', submitTx);
+        console.log('📦 Blockchain receipt status:', receipt.status);
+
+        // Check if transaction actually succeeded
+        if (receipt.status === 'success') {
+          blockchainSuccess = true;
+          blockchainTxHash = submitTx;
+          console.log('✅ Blockchain submission successful!', submitTx);
+        } else {
+          // Transaction was mined but reverted
+          console.error('❌ Transaction reverted on-chain');
+          throw new Error('Transaction reverted: possibly out of gas or contract error');
+        }
         
       } catch (blockchainErr: any) {
         blockchainError = blockchainErr.message || 'Blockchain submission failed';
@@ -1015,28 +1206,56 @@ export const useEarnX = () => {
     lastUpdate: Math.floor(Date.now() / 1000)
   };
 
-  // Get invoice details function
+  // Get invoice details from blockchain
   const getInvoiceDetails = useCallback(async (invoiceId: string) => {
     try {
-      // TODO: Implement actual contract call
       console.log('📄 Getting invoice details for:', invoiceId);
-      
+
+      if (!publicClient) {
+        console.log('⚠️ Public client not available');
+        return null;
+      }
+
+      // Get invoice from blockchain
+      const invoice = await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.PROTOCOL as `0x${string}`,
+        abi: EarnXProtocolABI,
+        functionName: 'getInvoice',
+        args: [BigInt(invoiceId)],
+      }) as any;
+
+      console.log('📋 Invoice data from blockchain:', invoice);
+
+      if (!invoice) {
+        return null;
+      }
+
+      // Convert blockchain data to frontend format
+      // Invoice struct: id, supplier, buyer, amount, commodity, supplierCountry, buyerCountry,
+      //                 exporterName, buyerName, dueDate, aprBasisPoints, status, createdAt,
+      //                 documentVerified, targetFunding, currentFunding, documentHash, riskScore, creditRating
       return {
-        id: invoiceId,
-        amount: '10000',
+        id: invoice.id?.toString() || invoiceId,
+        amount: (Number(invoice.amount) / 1e6).toFixed(2), // Convert from 6 decimals
         currency: 'USDC',
-        status: 'verified',
-        supplier: 'Tech Solutions Inc.',
-        buyer: 'Global Commerce Ltd.',
-        commodity: 'Software Services',
-        supplierCountry: 'United States',
-        buyerCountry: 'United Kingdom',
-        exporterName: 'Tech Solutions Inc.',
-        buyerName: 'Global Commerce Ltd.',
-        dueDate: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60), // 30 days from now
+        status: invoice.status === 2 ? 'verified' : 'pending', // 2 = Verified
+        supplier: invoice.supplier,
+        buyer: invoice.buyer,
+        commodity: invoice.commodity,
+        supplierCountry: invoice.supplierCountry,
+        buyerCountry: invoice.buyerCountry,
+        exporterName: invoice.exporterName,
+        buyerName: invoice.buyerName,
+        dueDate: Number(invoice.dueDate),
+        riskScore: Number(invoice.riskScore),
+        creditRating: invoice.creditRating,
+        aprBasisPoints: Number(invoice.aprBasisPoints),
+        targetFunding: (Number(invoice.targetFunding) / 1e6).toFixed(2),
+        currentFunding: (Number(invoice.currentFunding) / 1e6).toFixed(2),
+        documentVerified: invoice.documentVerified,
         verification: {
-          status: 'completed',
-          timestamp: Date.now(),
+          status: invoice.documentVerified ? 'completed' : 'pending',
+          timestamp: Number(invoice.createdAt) * 1000,
           chainlinkPriceUsed: true
         }
       };
@@ -1044,7 +1263,7 @@ export const useEarnX = () => {
       console.error('Error getting invoice details:', error);
       return null;
     }
-  }, []);
+  }, [publicClient]);
 
   // Get verification data function
   const getVerificationData = useCallback(async (invoiceId: string) => {
@@ -1070,35 +1289,44 @@ export const useEarnX = () => {
     }
   }, []);
 
-  // Get investment opportunities function
+  // Get investment opportunities from blockchain
   const getInvestmentOpportunities = useCallback(async () => {
     try {
-      // TODO: Implement actual contract call
-      console.log('💰 Getting investment opportunities...');
-      
-      return [
-        {
-          id: '1',
-          invoiceId: 'INV-001',
-          amount: 10000,
-          returnRate: 8.5,
-          duration: 30,
-          riskLevel: 'low'
-        },
-        {
-          id: '2',
-          invoiceId: 'INV-002',
-          amount: 15000,
-          returnRate: 9.2,
-          duration: 45,
-          riskLevel: 'medium'
-        }
-      ];
+      console.log('💰 Getting investment opportunities from blockchain...');
+
+      if (!publicClient) {
+        console.log('⚠️ Public client not available');
+        return [];
+      }
+
+      // Get invoice counter from contract
+      const invoiceCounter = await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.PROTOCOL as `0x${string}`,
+        abi: EarnXProtocolABI,
+        functionName: 'invoiceCounter',
+      });
+
+      const count = Number(invoiceCounter);
+      console.log('📋 Total invoices on chain:', count);
+
+      if (count === 0) {
+        return [];
+      }
+
+      // Return array of invoice IDs (1 to count)
+      const invoiceIds = [];
+      for (let i = 1; i <= count; i++) {
+        invoiceIds.push(i);
+      }
+
+      console.log('📋 Invoice IDs:', invoiceIds);
+      return invoiceIds;
+
     } catch (error) {
       console.error('Error getting investment opportunities:', error);
       return [];
     }
-  }, []);
+  }, [publicClient]);
 
   return {
     // Connection state

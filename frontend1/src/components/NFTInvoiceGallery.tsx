@@ -4,7 +4,7 @@ import {
   FileText, Shield, TrendingUp, ExternalLink, Hash, Clock, DollarSign,
   Award, Users, MapPin, Calendar, Target, Zap, Eye, ShoppingCart,
   Download, Upload, CheckCircle, AlertCircle, XCircle, Loader2, X,
-  Calculator, ArrowRight, Wallet
+  Calculator, ArrowRight, Wallet, ArrowRightCircle
 } from 'lucide-react';
 import { useInvestmentOpportunities } from '../hooks/useInvestmentOpportunities';
 import { useEarnX } from '../hooks/useEarnX';
@@ -15,7 +15,8 @@ export function NFTInvoiceGallery() {
     opportunities,
     portfolio,
     isLoading,
-    error
+    error,
+    loadOpportunities // Add function to reload opportunities
   } = useInvestmentOpportunities();
 
   const {
@@ -41,6 +42,7 @@ export function NFTInvoiceGallery() {
   const [investmentError, setInvestmentError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<React.ReactNode | null>(null);
   const [minting, setMinting] = useState(false);
+  const [investmentStep, setInvestmentStep] = useState<'idle' | 'checking' | 'approving' | 'investing' | 'confirming'>('idle');
 
   // Filter opportunities based on active tab
   const filteredOpportunities = opportunities.filter(opp => {
@@ -135,7 +137,7 @@ export function NFTInvoiceGallery() {
     setSuccessMessage(null);
   };
 
-  // Handle investment execution
+  // Handle investment execution with step-by-step feedback
   const handleInvest = async () => {
     if (!selectedInvestment || !investmentAmount) {
       setInvestmentError('Please enter an investment amount');
@@ -148,14 +150,15 @@ export function NFTInvoiceGallery() {
       return;
     }
 
-    if (amount > usdcBalance) {
-      setInvestmentError(`Insufficient balance. You have ${usdcBalance?.toFixed(2)} USDC`);
+    if (amount > (usdcBalance || 0)) {
+      setInvestmentError(`Insufficient balance. You have ${(usdcBalance || 0).toFixed(2)} USDC`);
       return;
     }
 
     try {
       setInvesting(true);
       setInvestmentError(null);
+      setInvestmentStep('checking');
 
       console.log('💰 Starting investment...', {
         opportunityId: selectedInvestment.invoiceId,
@@ -166,75 +169,109 @@ export function NFTInvoiceGallery() {
       // For blockchain-backed opportunities, use real blockchain investment
       if (selectedInvestment.isBlockchainBacked && selectedInvestment.invoiceId) {
         console.log('🔗 Using blockchain investment for invoice:', selectedInvestment.invoiceId);
-        
+
         // Step 0: Check if user has USDC tokens
         if (!usdcBalance || usdcBalance < amount) {
           setInvestmentError(`Insufficient USDC balance. You have ${(usdcBalance || 0).toFixed(2)} USDC but need ${amount} USDC. Please get test USDC first.`);
+          setInvestmentStep('idle');
           return;
         }
-        
+
         // Step 1: Check USDC allowance for Core Contract
+        console.log('💳 Checking USDC allowance...');
         const allowance = await getUSDCAllowance(contractAddresses.PROTOCOL);
         const amountWei = amount * 1e6;
-        
+
         console.log(`💳 USDC allowance check: ${allowance / 1e6} USDC allowed, need ${amount} USDC`);
-        
+
         if (allowance < amountWei) {
           console.log('💳 Insufficient allowance, requesting approval...');
-          setInvestmentError('Step 1/2: Approving USDC spending (may require 2 transactions)...');
-          
+          setInvestmentStep('approving');
+
           try {
             const approvalResult = await approveUSDC(contractAddresses.PROTOCOL, investmentAmount);
-            
+
             if (!approvalResult.success) {
               setInvestmentError(approvalResult.error || 'Failed to approve USDC. Please try again.');
+              setInvestmentStep('idle');
               return;
             }
-            
+
             console.log('✅ USDC approval successful');
-            setInvestmentError('Step 2/2: Processing investment...');
           } catch (approvalError: any) {
             console.error('❌ Approval failed:', approvalError);
             setInvestmentError(approvalError.message || 'Approval failed. Please try again.');
+            setInvestmentStep('idle');
             return;
           }
         }
-        
+
         // Step 2: Proceed with investment
+        setInvestmentStep('investing');
+        console.log('📝 Sending investment transaction to blockchain...');
+
         const result = await investInInvoice(selectedInvestment.invoiceId, investmentAmount);
-        
+
         if (result.success) {
+          setInvestmentStep('confirming');
           const explorerLink = result.txHash ? getMantleExplorerUrl(result.txHash) : null;
           setSuccessMessage(
-            <>
-              Successfully invested {investmentAmount} USDC!
+            <div className="space-y-2">
+              <p className="font-semibold">🎉 Investment Successful!</p>
+              <p>Successfully invested {investmentAmount} USDC in Invoice #{selectedInvestment.invoiceId}</p>
+              {result.txHash && (
+                <p className="text-sm">Transaction: {result.txHash.slice(0, 10)}...{result.txHash.slice(-8)}</p>
+              )}
               {explorerLink && (
-                <a 
-                  href={explorerLink} 
-                  target="_blank" 
+                <a
+                  href={explorerLink}
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="ml-2 text-green-800 underline hover:text-green-900"
+                  className="inline-flex items-center space-x-1 text-green-800 underline hover:text-green-900"
                 >
-                  View on Explorer ↗
+                  <span>View on Mantle Explorer</span>
+                  <ExternalLink className="w-3 h-3" />
                 </a>
               )}
-            </>
+            </div>
           );
           setInvestModalOpen(false);
           setInvestmentAmount('');
-          // Refresh opportunities data would happen here
+          setInvestmentStep('idle');
+
+          // Reload opportunities to reflect updated funding on blockchain
+          console.log('🔄 Reloading opportunities after successful investment...');
+          setTimeout(() => {
+            loadOpportunities();
+          }, 3000); // Wait 3 seconds for blockchain state to update
         } else {
-          setInvestmentError(result.error || 'Investment failed');
+          // Provide more detailed error message
+          let errorMessage = result.error || 'Investment failed';
+          if (errorMessage.includes('out of gas')) {
+            errorMessage = 'Transaction ran out of gas. The network may be congested. Please try again.';
+          } else if (errorMessage.includes('reverted')) {
+            errorMessage = 'Transaction was reverted. The invoice may not be available for investment or may already be fully funded.';
+          } else if (errorMessage.includes('rejected') || errorMessage.includes('denied')) {
+            errorMessage = 'Transaction was rejected. Please try again.';
+          }
+          setInvestmentError(errorMessage);
+          setInvestmentStep('idle');
         }
       } else {
         // For API-only opportunities, these are not available for real investment yet
         console.log('❌ API-only opportunity not available for blockchain investment:', selectedInvestment.id);
         setInvestmentError('This opportunity is not yet available for blockchain investment. Only blockchain-verified invoices can be invested in.');
+        setInvestmentStep('idle');
       }
-      
+
     } catch (error: any) {
       console.error('❌ Investment error:', error);
-      setInvestmentError(error.message || 'Investment failed');
+      let errorMessage = error.message || 'Investment failed';
+      if (errorMessage.includes('out of gas')) {
+        errorMessage = 'Transaction ran out of gas. Please try again with a smaller amount or wait for network congestion to clear.';
+      }
+      setInvestmentError(errorMessage);
+      setInvestmentStep('idle');
     } finally {
       setInvesting(false);
     }
@@ -247,6 +284,7 @@ export function NFTInvoiceGallery() {
     setInvestmentAmount('');
     setInvestmentError(null);
     setSuccessMessage(null);
+    setInvestmentStep('idle');
   };
 
   if (isLoading) {
@@ -606,22 +644,66 @@ export function NFTInvoiceGallery() {
               )}
             </div>
 
+            {/* Transaction Progress Steps */}
+            {investmentStep !== 'idle' && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">Transaction in Progress</span>
+                </div>
+                <div className="flex items-center space-x-2 text-xs">
+                  <div className={`flex items-center space-x-1 ${investmentStep === 'checking' ? 'text-blue-600 font-semibold' : 'text-green-600'}`}>
+                    {investmentStep === 'checking' ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                    <span>Checking</span>
+                  </div>
+                  <ArrowRight className="w-3 h-3 text-gray-400" />
+                  <div className={`flex items-center space-x-1 ${investmentStep === 'approving' ? 'text-blue-600 font-semibold' : (investmentStep === 'investing' || investmentStep === 'confirming') ? 'text-green-600' : 'text-gray-400'}`}>
+                    {investmentStep === 'approving' ? <Loader2 className="w-3 h-3 animate-spin" /> : (investmentStep === 'investing' || investmentStep === 'confirming') ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                    <span>Approving</span>
+                  </div>
+                  <ArrowRight className="w-3 h-3 text-gray-400" />
+                  <div className={`flex items-center space-x-1 ${investmentStep === 'investing' ? 'text-blue-600 font-semibold' : investmentStep === 'confirming' ? 'text-green-600' : 'text-gray-400'}`}>
+                    {investmentStep === 'investing' ? <Loader2 className="w-3 h-3 animate-spin" /> : investmentStep === 'confirming' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                    <span>Investing</span>
+                  </div>
+                  <ArrowRight className="w-3 h-3 text-gray-400" />
+                  <div className={`flex items-center space-x-1 ${investmentStep === 'confirming' ? 'text-green-600 font-semibold' : 'text-gray-400'}`}>
+                    {investmentStep === 'confirming' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                    <span>Done</span>
+                  </div>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  {investmentStep === 'checking' && 'Checking USDC allowance...'}
+                  {investmentStep === 'approving' && 'Please approve the USDC spending in your wallet...'}
+                  {investmentStep === 'investing' && 'Please confirm the investment transaction in your wallet...'}
+                  {investmentStep === 'confirming' && 'Waiting for blockchain confirmation...'}
+                </p>
+              </div>
+            )}
+
             {investmentError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{investmentError}</p>
+                <div className="flex items-start space-x-2">
+                  <XCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-red-600">{investmentError}</p>
+                </div>
               </div>
             )}
 
             {successMessage && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <div className="text-sm text-green-600">{successMessage}</div>
+                <div className="flex items-start space-x-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-green-600">{successMessage}</div>
+                </div>
               </div>
             )}
 
             <div className="flex space-x-3">
               <button
                 onClick={closeInvestModal}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={investing}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
                 Cancel
               </button>
@@ -633,7 +715,10 @@ export function NFTInvoiceGallery() {
                 {investing ? (
                   <>
                     <Loader2 className="w-4 h-4 inline mr-2 animate-spin" />
-                    Investing...
+                    {investmentStep === 'checking' && 'Checking...'}
+                    {investmentStep === 'approving' && 'Approving...'}
+                    {investmentStep === 'investing' && 'Investing...'}
+                    {investmentStep === 'confirming' && 'Confirming...'}
                   </>
                 ) : (
                   'Confirm Investment'

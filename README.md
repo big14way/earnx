@@ -327,7 +327,8 @@ MANTLE_TESTNET_PRIVATE_KEY=your_private_key
 
 | Contract | Address |
 |----------|---------|
-| MantleEarnXProtocol | `0x95EAb385c669aca31C0d406c270d6EdDFED0D1ee` |
+| **SimpleEarnXProtocol** (Active) | `0x28E9D861Db74153630A85ee6950ab25aF90BF554` |
+| MantleEarnXProtocol (Legacy) | `0x95EAb385c669aca31C0d406c270d6EdDFED0D1ee` |
 | EarnXInvoiceNFT | `0x4f330C74c7bd84665722bA0664705e2f2E6080DC` |
 | MantleEarnXVerificationModule | `0x4adDFcfa066E0c955bC0347d9565454AD7Ceaae1` |
 | EarnXInvestmentModule | `0x199516b47F1ce8C77617b58526ad701bF1f750FA` |

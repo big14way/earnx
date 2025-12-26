@@ -34,27 +34,43 @@ const COMMODITY_OPTIONS = [
   { value: 'Spices', label: '🌶️ Spices', riskFactor: 0.25, chainlinkPrice: 4.20, unit: 'USD/kg', volatility: 0.35 },
 ];
 
-// Country options with risk assessments
+// Country options with risk assessments - focused on African trade finance
 const COUNTRY_OPTIONS = {
   suppliers: [
+    // East Africa
     { value: 'Kenya', label: '🇰🇪 Kenya', risk: 'low' },
     { value: 'Ethiopia', label: '🇪🇹 Ethiopia', risk: 'medium' },
+    { value: 'Tanzania', label: '🇹🇿 Tanzania', risk: 'low' },
+    { value: 'Uganda', label: '🇺🇬 Uganda', risk: 'medium' },
+    { value: 'Rwanda', label: '🇷🇼 Rwanda', risk: 'low' },
+    // West Africa
     { value: 'Ghana', label: '🇬🇭 Ghana', risk: 'low' },
-    { value: 'Brazil', label: '🇧🇷 Brazil', risk: 'low' },
-    { value: 'Colombia', label: '🇨🇴 Colombia', risk: 'medium' },
-    { value: 'India', label: '🇮🇳 India', risk: 'medium' },
-    { value: 'Vietnam', label: '🇻🇳 Vietnam', risk: 'medium' },
-    { value: 'Indonesia', label: '🇮🇩 Indonesia', risk: 'medium' }
+    { value: 'Nigeria', label: '🇳🇬 Nigeria', risk: 'medium' },
+    { value: 'Ivory Coast', label: '🇨🇮 Ivory Coast', risk: 'low' },
+    { value: 'Senegal', label: '🇸🇳 Senegal', risk: 'low' },
+    // Southern Africa
+    { value: 'South Africa', label: '🇿🇦 South Africa', risk: 'low' },
+    { value: 'Zambia', label: '🇿🇲 Zambia', risk: 'medium' },
+    { value: 'Zimbabwe', label: '🇿🇼 Zimbabwe', risk: 'medium' },
+    // North Africa
+    { value: 'Morocco', label: '🇲🇦 Morocco', risk: 'low' },
+    { value: 'Egypt', label: '🇪🇬 Egypt', risk: 'low' },
   ],
   buyers: [
+    // African buyers (intra-African trade)
+    { value: 'South Africa', label: '🇿🇦 South Africa', risk: 'low' },
+    { value: 'Kenya', label: '🇰🇪 Kenya', risk: 'low' },
+    { value: 'Nigeria', label: '🇳🇬 Nigeria', risk: 'medium' },
+    { value: 'Egypt', label: '🇪🇬 Egypt', risk: 'low' },
+    { value: 'Morocco', label: '🇲🇦 Morocco', risk: 'low' },
+    // International buyers
     { value: 'USA', label: '🇺🇸 United States', risk: 'low' },
     { value: 'UK', label: '🇬🇧 United Kingdom', risk: 'low' },
     { value: 'Germany', label: '🇩🇪 Germany', risk: 'low' },
     { value: 'France', label: '🇫🇷 France', risk: 'low' },
-    { value: 'Japan', label: '🇯🇵 Japan', risk: 'low' },
-    { value: 'Canada', label: '🇨🇦 Canada', risk: 'low' },
-    { value: 'Australia', label: '🇦🇺 Australia', risk: 'low' },
-    { value: 'Netherlands', label: '🇳🇱 Netherlands', risk: 'low' }
+    { value: 'China', label: '🇨🇳 China', risk: 'low' },
+    { value: 'UAE', label: '🇦🇪 UAE', risk: 'low' },
+    { value: 'India', label: '🇮🇳 India', risk: 'low' },
   ]
 };
 

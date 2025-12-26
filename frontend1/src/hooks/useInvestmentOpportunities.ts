@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 // @ts-ignore
 import { useAccount } from 'wagmi';
 import { useEarnX } from './useEarnX';
+import { getMantleExplorerUrl } from '../utils/transactionUtils';
 
 export interface InvestmentOpportunity {
   id: string;
@@ -48,7 +49,15 @@ export interface InvestmentPortfolio {
 
 export function useInvestmentOpportunities() {
   const { address } = useAccount();
-  const { getInvestmentOpportunities: getBlockchainOpportunities, getInvoiceDetails } = useEarnX();
+  const {
+    getInvestmentOpportunities: getBlockchainOpportunities,
+    getInvoiceDetails,
+    investInInvoice,
+    approveUSDC,
+    getUSDCAllowance,
+    contractAddresses,
+    usdcBalance
+  } = useEarnX();
   const [opportunities, setOpportunities] = useState<InvestmentOpportunity[]>([]);
   const [portfolio, setPortfolio] = useState<InvestmentPortfolio | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -181,20 +190,54 @@ export function useInvestmentOpportunities() {
       // Fetch details for each opportunity
       for (const id of opportunityIds) {
         try {
-          const details = await getInvoiceDetails(id.toString());
+          // Ensure id is a primitive value, not an object
+          const invoiceId = typeof id === 'object' ? String(Object.values(id)[0] || id) : String(id);
+          const details = await getInvoiceDetails(invoiceId);
           console.log(`📋 Invoice ${id} details:`, details);
 
           if (details) {
-            // Handle amount as either string or number  
+            // Handle amount as either string or number
             const detailsAmount = (details as any).amount;
             const amountValue = typeof detailsAmount === 'string' ? detailsAmount : String(detailsAmount || '0');
             const amount = parseFloat(amountValue);
-            const targetFunding = calculateTargetFunding(amount.toString());
-            const aprBasisPoints = calculateAPR(35); // Default risk score for blockchain invoices
+
+            // Get target funding and current funding from blockchain data
+            // Note: getInvoiceDetails already converts from wei to human-readable format
+            const targetFundingRaw = (details as any).targetFunding;
+            const currentFundingRaw = (details as any).currentFunding;
+
+            // Values are already in human-readable format (getInvoiceDetails divides by 1e6)
+            const targetFundingValue = targetFundingRaw
+              ? parseFloat(String(targetFundingRaw))
+              : parseFloat(calculateTargetFunding(amount.toString()));
+            const currentFundingValue = currentFundingRaw
+              ? parseFloat(String(currentFundingRaw))
+              : 0;
+
+            const fundingPercentage = targetFundingValue > 0 ? (currentFundingValue / targetFundingValue) * 100 : 0;
+
+            // Get APR and risk from blockchain if available
+            const riskScore = (details as any).riskScore ? Number((details as any).riskScore) : 35;
+            const aprBasisPoints = (details as any).aprBasisPoints ? Number((details as any).aprBasisPoints) : calculateAPR(riskScore);
+            const creditRating = (details as any).creditRating || 'B+';
+
+            // Determine status based on invoice status from blockchain
+            const invoiceStatus = (details as any).status;
+            let opportunityStatus: 'available' | 'funding' | 'funded' | 'completed' = 'available';
+            if (invoiceStatus === 2) opportunityStatus = 'available'; // Verified
+            else if (invoiceStatus === 3) opportunityStatus = 'funded'; // FullyFunded
+            else if (invoiceStatus >= 5) opportunityStatus = 'completed'; // Funded, Repaid, etc.
+
+            // If has current funding but not fully funded, it's "funding"
+            if (currentFundingValue > 0 && fundingPercentage < 100) {
+              opportunityStatus = 'funding';
+            }
+
+            console.log(`📊 Invoice ${invoiceId} funding: ${currentFundingValue}/${targetFundingValue} (${fundingPercentage.toFixed(1)}%)`);
 
             blockchainOpportunities.push({
-              id: `blockchain-${id}`,
-              invoiceId: id.toString(),
+              id: `blockchain-${invoiceId}`,
+              invoiceId: invoiceId,
               supplier: (details as any).supplier || 'Unknown',
               buyer: (details as any).buyer || 'Unknown Buyer',
               amount: amount.toFixed(2),
@@ -204,17 +247,17 @@ export function useInvestmentOpportunities() {
               exporterName: (details as any).exporterName || 'Unknown Exporter',
               buyerName: (details as any).buyerName || 'Unknown Buyer',
               dueDate: (details as any).dueDate || Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60),
-              riskScore: 35, // Default risk score
-              creditRating: 'B+', // Default credit rating for blockchain invoices
+              riskScore: riskScore,
+              creditRating: creditRating,
               aprBasisPoints,
-              targetFunding,
-              currentFunding: '0.00',
-              fundingPercentage: 0,
+              targetFunding: targetFundingValue.toFixed(2),
+              currentFunding: currentFundingValue.toFixed(2),
+              fundingPercentage: Math.min(fundingPercentage, 100),
               isBlockchainBacked: true,
-              txHash: undefined, // Will be populated when available
-              blockNumber: undefined, // Will be populated when available
-              createdAt: Date.now(), // Use current timestamp for blockchain invoices
-              status: 'available' as const
+              txHash: undefined,
+              blockNumber: undefined,
+              createdAt: (details as any).createdAt ? Number((details as any).createdAt) * 1000 : Date.now(),
+              status: opportunityStatus
             });
           }
         } catch (error) {
@@ -236,22 +279,27 @@ export function useInvestmentOpportunities() {
     setError(null);
 
     try {
-      // Load API-based opportunities (from localStorage)
-      const apiOpportunities = loadAPIOpportunities();
-
-      // Load blockchain opportunities
+      // Load blockchain opportunities ONLY (more reliable, no duplicates)
       const blockchainOpportunities = await loadBlockchainOpportunities();
 
-      // Combine all opportunities
-      const allOpportunities = [
-        ...apiOpportunities,
-        ...blockchainOpportunities
-      ];
+      // Deduplicate by invoice ID (prefer blockchain version)
+      const seenInvoiceIds = new Set<string>();
+      const uniqueOpportunities: InvestmentOpportunity[] = [];
+
+      // Add blockchain opportunities first (they take priority)
+      for (const opp of blockchainOpportunities) {
+        const invoiceId = opp.invoiceId;
+        if (!seenInvoiceIds.has(invoiceId)) {
+          seenInvoiceIds.add(invoiceId);
+          uniqueOpportunities.push(opp);
+        }
+      }
 
       // Sort by creation date (newest first)
-      allOpportunities.sort((a, b) => b.createdAt - a.createdAt);
+      uniqueOpportunities.sort((a, b) => b.createdAt - a.createdAt);
 
-      setOpportunities(allOpportunities);
+      console.log('✅ Loaded unique opportunities:', uniqueOpportunities.length);
+      setOpportunities(uniqueOpportunities);
 
     } catch (error) {
       console.error('❌ Error loading opportunities:', error);
@@ -259,7 +307,7 @@ export function useInvestmentOpportunities() {
     } finally {
       setIsLoading(false);
     }
-  }, [loadAPIOpportunities, loadBlockchainOpportunities]);
+  }, [loadBlockchainOpportunities]);
 
   // Load user's investment portfolio
   const loadPortfolio = useCallback(async () => {
@@ -291,11 +339,11 @@ export function useInvestmentOpportunities() {
     }
   }, [address]);
 
-  // Invest in an opportunity
+  // Invest in an opportunity - REAL BLOCKCHAIN TRANSACTIONS
   const investInOpportunity = useCallback(async (
-    opportunityId: string, 
+    opportunityId: string,
     investmentAmount: string
-  ): Promise<{ success: boolean; error?: string; txHash?: string }> => {
+  ): Promise<{ success: boolean; error?: string; txHash?: string; step?: string }> => {
     if (!address) {
       return { success: false, error: 'Please connect your wallet' };
     }
@@ -308,7 +356,48 @@ export function useInvestmentOpportunities() {
         return { success: false, error: 'Opportunity not found' };
       }
 
-      // For now, simulate investment (since blockchain is having issues)
+      // Check if this is a blockchain-backed opportunity
+      if (!opportunity.isBlockchainBacked) {
+        return { success: false, error: 'This opportunity is not blockchain-verified. Only verified invoices can be invested in.' };
+      }
+
+      const amount = parseFloat(investmentAmount);
+
+      // Check USDC balance
+      if (!usdcBalance || usdcBalance < amount) {
+        return { success: false, error: `Insufficient USDC balance. You have ${(usdcBalance || 0).toFixed(2)} USDC but need ${amount} USDC.` };
+      }
+
+      // Step 1: Check and approve USDC if needed
+      console.log('💳 Checking USDC allowance...');
+      const amountWei = amount * 1e6; // USDC has 6 decimals
+      const allowance = await getUSDCAllowance(contractAddresses.PROTOCOL);
+
+      console.log(`💳 USDC allowance: ${allowance / 1e6} USDC, need: ${amount} USDC`);
+
+      if (allowance < amountWei) {
+        console.log('💳 Insufficient allowance, requesting approval...');
+
+        const approvalResult = await approveUSDC(contractAddresses.PROTOCOL, investmentAmount);
+
+        if (!approvalResult.success) {
+          return { success: false, error: approvalResult.error || 'Failed to approve USDC spending', step: 'approval' };
+        }
+
+        console.log('✅ USDC approval successful');
+      }
+
+      // Step 2: Execute investment on blockchain
+      console.log('🔗 Executing blockchain investment for invoice:', opportunity.invoiceId);
+      const result = await investInInvoice(opportunity.invoiceId, investmentAmount);
+
+      if (!result.success) {
+        return { success: false, error: result.error || 'Investment transaction failed', step: 'investment' };
+      }
+
+      console.log('✅ Blockchain investment successful!', result.txHash);
+
+      // Step 3: Update local state after successful blockchain transaction
       const investment = {
         id: `inv-${Date.now()}`,
         invoiceId: opportunity.invoiceId,
@@ -344,7 +433,7 @@ export function useInvestmentOpportunities() {
         if (op.id === opportunityId) {
           const newCurrentFunding = (parseFloat(op.currentFunding) + parseFloat(investmentAmount)).toFixed(2);
           const newFundingPercentage = (parseFloat(newCurrentFunding) / parseFloat(op.targetFunding)) * 100;
-          
+
           return {
             ...op,
             currentFunding: newCurrentFunding,
@@ -357,20 +446,19 @@ export function useInvestmentOpportunities() {
 
       setOpportunities(updatedOpportunities);
 
-      console.log('✅ Investment successful!');
-      return { 
-        success: true, 
-        txHash: `0x${Math.random().toString(16).substr(2, 64)}` // Demo tx hash
+      return {
+        success: true,
+        txHash: result.txHash
       };
 
     } catch (error) {
       console.error('❌ Investment failed:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Investment failed' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Investment failed'
       };
     }
-  }, [address, opportunities, portfolio]);
+  }, [address, opportunities, portfolio, usdcBalance, getUSDCAllowance, approveUSDC, investInInvoice, contractAddresses]);
 
   // Load data on mount and when address changes
   useEffect(() => {
