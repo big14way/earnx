@@ -16,7 +16,23 @@ A confirmed export order is not cash. An exporter pays farmers, processors and f
 - **37%** of trade finance applications from African firms were rejected between 2020 and 2024 (same source).
 - Africa's factoring market was about **€50 billion** in 2024; Afreximbank estimates it must reach **€240 billion** to close the SME gap ([Afreximbank via GTR](https://www.gtreview.com/news/africa/factoring-volumes-must-reach-e240bn-to-close-sme-financing-gap-afreximbank-says/)).
 
-<!-- Founder story section: added when written. -->
+## Why I'm building EarnX
+
+<img src="app/public/story/mama-dora.jpg" alt="Mama Dora on her farm" width="300" align="right" />
+
+My mother, Mama Dora, is a farmer in Delta State, Nigeria. She grows cassava and other crops, and for as long as I can remember her harvest has paid for everything in our home.
+
+Then my father had a stroke. The hospital needed money that week. Like most Nigerian families, we had no health insurance: of every ₦1,000 spent on healthcare in Nigeria, about ₦720 comes straight out of a family's own pocket ([World Bank](https://data.worldbank.org/indicator/SH.XPD.OOPC.CH.ZS?locations=NG)).
+
+It happened just after harvest, when a farmer has the most to show and the least cash in hand. What money she had went to the farmhands who had helped bring the crop in, and it still wasn't enough to pay them all. The harvest was worth far more than the hospital bill, but it wasn't money yet.
+
+So we did what farming families across Africa do. We sold part of the crop cheaply, just to get cash quickly, and we went to the bank. Between the fees and the interest rate, the loan cost far more than we could carry, and it bankrupted us.
+
+I built EarnX so that the value of work already done reaches people when they need it, at a fair price. We start with African exporters, whose invoices we can verify on-chain today. Every invoice we fund is a family that doesn't have to choose between the harvest and the hospital.
+
+*— Godswill Idolor, founder, and son of a Delta State farmer*
+
+<br clear="right" />
 
 ## What EarnX does
 
