@@ -12,7 +12,7 @@
 ## PARTIES
 
 **EarnX Protocol** ("Platform")
-- Decentralized Trade Finance Platform on Mantle Network
+- Trade finance platform on Robinhood Chain and Arbitrum
 - Website: [Your URL]
 - Contact: [Your Email]
 

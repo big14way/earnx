@@ -80,7 +80,7 @@ EarnX contributes to AfCFTA's digital infrastructure requirements:
 
 **EarnX Solution**:
 - Pre-configured for Coffee, Cocoa, Cotton, Cassava
-- Real-time commodity pricing via Chainlink
+- Transparent, rules-based pricing recorded on-chain for every invoice
 - Quality-linked risk assessment
 - Supports processed goods (not just raw commodities)
 
@@ -171,7 +171,7 @@ EarnX can support national committees with:
 |------------|---------------|
 | Instant cross-border payments | USDC settlement layer |
 | Reduce dollar dependency | Stablecoin bridge |
-| Lower transaction costs | 0.1 gwei on Mantle |
+| Lower transaction costs | Sub-cent fees on Arbitrum chains |
 | Trade finance access | Core EarnX function |
 
 ---
@@ -278,8 +278,8 @@ Investors Receive Returns
 - Insurance Companies (Default Protection)
 
 ### Technology
-- Chainlink (Oracle Infrastructure)
-- Mantle Network (L2 Scaling)
+- Robinhood Chain and Arbitrum (settlement layers)
+- Paxos USDG and Circle USDC (dollar stablecoins)
 - IPFS/Filecoin (Document Storage)
 - Identity Providers (KYC/AML)
 
@@ -329,10 +329,9 @@ The AfCFTA represents a once-in-a-generation opportunity to transform African ec
 - Twitter: [Your Handle]
 - Discord: [Your Discord]
 
-**Built on Mantle Network | Powered by Chainlink**
+**Built on Robinhood Chain and Arbitrum | Settled in USDG and USDC**
 
 ---
 
 *Document Version: 1.0*
 *Last Updated: December 2024*
-*Prepared for: Mantle Global Hackathon 2025*

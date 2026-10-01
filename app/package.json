@@ -1,0 +1,39 @@
+{
+  "name": "earnx-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "sync-contracts": "node scripts/sync-contracts.mjs"
+  },
+  "dependencies": {
+    "@rainbow-me/rainbowkit": "^2.2.11",
+    "@tanstack/react-query": "^5.104.0",
+    "@zerodev/passkey-validator": "^5.6.0",
+    "@zerodev/sdk": "^5.5.10",
+    "@zerodev/webauthn-key": "^5.5.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "^7.18.4",
+    "viem": "^2.57.2",
+    "wagmi": "^2.19.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "5.9",
+    "vite": "^7.3.6"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "bufferutil": false,
+    "keccak": false,
+    "utf-8-validate": false
+  }
+}

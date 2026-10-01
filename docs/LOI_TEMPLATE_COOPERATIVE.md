@@ -12,7 +12,7 @@
 ## PARTIES
 
 **EarnX Protocol** ("Platform")
-- Decentralized Trade Finance Platform on Mantle Network
+- Trade finance platform on Robinhood Chain and Arbitrum
 - Solving the $100B+ African Trade Finance Gap
 
 **[COOPERATIVE NAME]** ("Cooperative")
@@ -71,7 +71,7 @@ Step 1: SUBMIT INVOICE
 Cooperative submits export invoice + documents
          ↓
 Step 2: VERIFICATION
-Chainlink oracles verify documents automatically
+Documents are fingerprinted on-chain and checked by a verifier
          ↓
 Step 3: TOKENIZATION
 Invoice becomes NFT, open for investment
@@ -297,4 +297,4 @@ This Letter of Intent represents mutual interest in collaboration. It is non-bin
 
 *EarnX Protocol - Democratizing Trade Finance for African Cooperatives*
 
-*Built on Mantle Network | Powered by Chainlink*
+*Built on Robinhood Chain and Arbitrum*
