@@ -16,6 +16,11 @@ export const supportedChains = [robinhoodTestnet, arbitrumSepolia] as const;
 export type SupportedChainId = (typeof supportedChains)[number]['id'];
 export const defaultChainId: SupportedChainId = robinhoodTestnet.id;
 
+export const publicRpcUrl: Record<SupportedChainId, string> = {
+  [robinhoodTestnet.id]: 'https://rpc.testnet.chain.robinhood.com',
+  [arbitrumSepolia.id]: 'https://sepolia-rollup.arbitrum.io/rpc',
+};
+
 export const rpcUrl: Record<SupportedChainId, string> = {
   [robinhoodTestnet.id]: alchemyKey
     ? `https://robinhood-testnet.g.alchemy.com/v2/${alchemyKey}`
