@@ -2,8 +2,6 @@ import { arbitrumSepolia as arbitrumSepoliaBase, robinhoodTestnet } from 'viem/c
 import { defineChain, type Address } from 'viem';
 import { deployments } from '../abi/earnx';
 
-const alchemyKey = import.meta.env.VITE_ALCHEMY_API_KEY as string | undefined;
-
 // Contracts are source-verified on Blockscout, so link there rather than Arbiscan.
 export const arbitrumSepolia = defineChain({
   ...arbitrumSepoliaBase,
@@ -21,13 +19,13 @@ export const publicRpcUrl: Record<SupportedChainId, string> = {
   [arbitrumSepolia.id]: 'https://sepolia-rollup.arbitrum.io/rpc',
 };
 
+/** Our /api/rpc proxy (Alchemy, key kept server-side); wagmi falls back to publicRpcUrl if it fails. */
+const proxy = (id: number) =>
+  typeof window === 'undefined' ? publicRpcUrl[id as SupportedChainId] : `${window.location.origin}/api/rpc?chain=${id}`;
+
 export const rpcUrl: Record<SupportedChainId, string> = {
-  [robinhoodTestnet.id]: alchemyKey
-    ? `https://robinhood-testnet.g.alchemy.com/v2/${alchemyKey}`
-    : 'https://rpc.testnet.chain.robinhood.com',
-  [arbitrumSepolia.id]: alchemyKey
-    ? `https://arb-sepolia.g.alchemy.com/v2/${alchemyKey}`
-    : 'https://sepolia-rollup.arbitrum.io/rpc',
+  [robinhoodTestnet.id]: proxy(robinhoodTestnet.id),
+  [arbitrumSepolia.id]: proxy(arbitrumSepolia.id),
 };
 
 export const chainMeta: Record<SupportedChainId, { short: string; faucet: string; accent: string }> = {
