@@ -1,0 +1,23 @@
+{
+  "sample": true,
+  "note": "Fictional sample data for the EarnX testnet demo. Not a real company, shipment or invoice.",
+  "invoiceNumber": "NG-AFCFTA-2026-0033",
+  "commodity": "Cassava flour",
+  "quantity": "14 t",
+  "unitPrice": "USD 700/t",
+  "totalAmount": 9800,
+  "currency": "USD (settled in USDG/USDC)",
+  "exporter": "Sample exporter (EarnX demo wallet)",
+  "buyer": "Sample buyer: food distributor, Accra",
+  "origin": "Nigeria",
+  "destination": "Ghana",
+  "incoterms": "DAP Accra",
+  "paymentTerms": "Net 30 days",
+  "portOfLoading": "Seme border (road)",
+  "documents": [
+    "Commercial invoice",
+    "Bill of lading / waybill",
+    "Certificate of origin",
+    "Phytosanitary certificate"
+  ]
+}

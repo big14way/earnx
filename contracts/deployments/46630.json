@@ -1,0 +1,11 @@
+{
+  "chainId": 46630,
+  "deployedAtBlock": 127103838,
+  "deployer": "0x3C343AD077983371b29fee386bdBC8a92E934C51",
+  "invoiceNFT": "0x7c2e27323578C67B4c2E847024D80091586503d6",
+  "protocol": "0xA7fC55ca10c05aA2a0e0Cef5e00f15B08Caf4a99",
+  "tokens": [
+    "0x7E955252E15c84f5768B83c41a71F9eba181802F"
+  ],
+  "verifier": "0x3C343AD077983371b29fee386bdBC8a92E934C51"
+}

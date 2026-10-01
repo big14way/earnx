@@ -1,0 +1,23 @@
+{
+  "sample": true,
+  "note": "Fictional sample data for the EarnX testnet demo. Not a real company, shipment or invoice.",
+  "invoiceNumber": "KE-EXP-2026-0276",
+  "commodity": "Black tea (CTC)",
+  "quantity": "9 t",
+  "unitPrice": "USD 3,000/t",
+  "totalAmount": 27000,
+  "currency": "USD (settled in USDG/USDC)",
+  "exporter": "Sample exporter (EarnX demo wallet)",
+  "buyer": "Sample buyer: tea blender, Dubai",
+  "origin": "Kenya",
+  "destination": "United Arab Emirates",
+  "incoterms": "FOB Mombasa",
+  "paymentTerms": "Net 90 days",
+  "portOfLoading": "Mombasa",
+  "documents": [
+    "Commercial invoice",
+    "Bill of lading / waybill",
+    "Certificate of origin",
+    "Phytosanitary certificate"
+  ]
+}
