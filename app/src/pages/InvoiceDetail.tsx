@@ -69,6 +69,15 @@ function InvoiceView({ chainId, id }: { chainId: SupportedChainId; id: bigint })
               </div>
             )}
             {invoice.riskScore > 0 && <RiskBar score={invoice.riskScore} />}
+            {invoice.riskScore > 0 && pricedByEngine(chainId, invoice.id) && (
+              <p className="mt-3 text-xs text-muted">
+                APR and advance computed on-chain by the{' '}
+                <a className="font-semibold text-leaf underline" href={explorerUrl(chainId, 'address', contractsFor(chainId).riskEngine!)} target="_blank" rel="noreferrer">
+                  Rust risk engine (Stylus)
+                </a>{' '}
+                from a published formula.
+              </p>
+            )}
           </Card>
 
           <Card className="p-6">
@@ -381,4 +390,9 @@ function AddressLink({ chainId, address }: { chainId: number; address: string })
       {shortAddress(address)}
     </a>
   );
+}
+
+function pricedByEngine(chainId: SupportedChainId, id: bigint) {
+  const { riskEngine, riskEngineSinceInvoice } = contractsFor(chainId);
+  return Boolean(riskEngine && riskEngineSinceInvoice !== undefined && id >= riskEngineSinceInvoice);
 }

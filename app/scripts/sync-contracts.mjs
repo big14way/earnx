@@ -17,6 +17,8 @@ for (const file of readdirSync(join(root, 'deployments'))) {
     invoiceNFT: d.invoiceNFT,
     tokens: d.tokens,
     deployedAtBlock: d.deployedAtBlock,
+    riskEngine: d.riskEngine ?? null,
+    riskEngineSinceInvoice: d.riskEngineSinceInvoice ?? null,
   };
 }
 

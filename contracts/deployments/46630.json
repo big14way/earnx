@@ -7,5 +7,7 @@
   "tokens": [
     "0x7E955252E15c84f5768B83c41a71F9eba181802F"
   ],
-  "verifier": "0x3C343AD077983371b29fee386bdBC8a92E934C51"
+  "verifier": "0x3C343AD077983371b29fee386bdBC8a92E934C51",
+  "riskEngine": "0x454aeA0eDA332a09FFc61C5799B336AEa24Cd863",
+  "riskEngineSinceInvoice": 9
 }

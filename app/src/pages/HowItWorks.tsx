@@ -21,7 +21,7 @@ export function HowItWorks() {
       <ol className="mt-10 grid gap-4 md:grid-cols-2">
         {[
           ['1. Submit', 'The exporter uploads documents to IPFS and submits the invoice. The contract stores the buyer, the goods, the amount, the due date and the documents’ hash.'],
-          ['2. Verify and price', 'A verifier sets a risk score (0–100), the APR investors earn and the advance rate (up to 90–95% of the invoice). Scores above 80 cannot be funded. The exporter receives a non-transferable record of the invoice.'],
+          ['2. Verify and price', 'A verifier checks the documents and sets a risk score (0–100). The APR investors earn and the share advanced to the exporter are then computed on-chain by a risk engine written in Rust (an Arbitrum Stylus contract) from a published formula. Scores above 80 cannot be funded. The exporter receives a non-transferable record of the invoice.'],
           ['3. Fund', 'Investors fund it in USDG or USDC during a 14-day window. When the target is reached, the advance (minus a 1% reserve fee) goes to the exporter in the same transaction. If it isn’t reached, investors get refunds.'],
           ['4. Repay and claim', 'The buyer (or the exporter) repays principal plus interest, in parts or in full. Each investor claims their share whenever money arrives.'],
         ].map(([t, d]) => (
@@ -58,6 +58,7 @@ export function HowItWorks() {
                 <dl className="mt-3 space-y-2">
                   <Addr label="EarnXProtocol" chainId={c.id} address={d.protocol} />
                   <Addr label="EarnXInvoiceNFT" chainId={c.id} address={d.invoiceNFT} />
+                  {d.riskEngine && <Addr label="Risk engine (Rust, Stylus)" chainId={c.id} address={d.riskEngine} />}
                   {tokensFor(c.id).map((t) => <Addr key={t.address} label={t.symbol} chainId={c.id} address={t.address} />)}
                 </dl>
               </Card>
