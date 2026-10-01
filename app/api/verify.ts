@@ -2,6 +2,7 @@ import { createPublicClient, createWalletClient, http, keccak256, type Hex } fro
 import { privateKeyToAccount } from 'viem/accounts';
 import { arbitrumSepolia, robinhoodTestnet } from 'viem/chains';
 import { deployments, protocolAbi } from '../src/abi/earnx.js';
+import { benchmarkFor, benchmarkSource, compareToMarket, type Trade } from '../src/lib/market.js';
 
 /**
  * Automated pre-screen for testnet invoices. It re-downloads the documents from IPFS, checks
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
   const tenorDays = Math.round((inv.dueDate - now) / 86_400);
 
   // 1. Documents: the manifest on IPFS must hash to the docsHash stored on-chain.
-  let manifest: { files?: { name: string }[] } | undefined;
+  let manifest: { files?: { name: string }[]; trade?: Trade } | undefined;
   if (!inv.docsCID) {
     checks.push({ ok: false, label: 'No documents were uploaded to IPFS' });
   } else {
@@ -63,6 +64,27 @@ export async function POST(request: Request) {
   checks.push({ ok: inv.faceValue <= MAX_AUTO_FACE_VALUE, label: 'Invoice value within the automated limit (250,000)' });
   checks.push({ ok: tenorDays >= 7 && tenorDays <= MAX_AUTO_TENOR_DAYS, label: `Term of ${tenorDays} days within 7–${MAX_AUTO_TENOR_DAYS}` });
   checks.push({ ok: inv.buyer.trim().length >= 3, label: 'Buyer is named' });
+
+  // 3. The numbers add up, and the price is in line with the market (over-invoicing is the classic fraud).
+  const trade = manifest?.trade;
+  const marketFactors: string[] = [];
+  let marketPts = 0;
+  if (trade) {
+    const declared = trade.quantity * trade.unitPriceUsd;
+    const face = Number(inv.faceValue) / 1e6;
+    checks.push({ ok: Math.abs(declared - face) <= face * 0.02, label: `Quantity × unit price ($${declared.toLocaleString('en-US')}) matches the invoice total` });
+    const benchmark = benchmarkFor(inv.commodity, inv.origin);
+    if (benchmark) {
+      const m = compareToMarket(trade, benchmark);
+      const source = `World Bank ${benchmark.name}, ${benchmark.month.replace('M', '-')}: $${benchmark.usdPerTonne.toLocaleString('en-US')}/t`;
+      checks.push({ ok: m.level !== 'far-above', label: `Unit price vs ${source}: ${m.label}` });
+      if (m.level === 'above') { marketPts = 10; marketFactors.push(`+10: price ${m.label}`); }
+      else if (m.level === 'below') { marketPts = 5; marketFactors.push(`+5: price ${m.label}`); }
+      else if (m.level === 'in-line') { marketPts = -3; marketFactors.push('−3: price in line with the World Bank benchmark'); }
+    } else {
+      marketFactors.push(`No public benchmark for "${inv.commodity}" yet (${benchmarkSource.name})`);
+    }
+  }
 
   const wallet = createWalletClient({ chain, transport: http(), account: privateKeyToAccount(key) });
   const failed = checks.find((c) => !c.ok);
@@ -84,6 +106,8 @@ export async function POST(request: Request) {
   const commodity = COMMODITY_RISK.find(([re]) => re.test(inv.commodity));
   const commodityPts = commodity ? commodity[1] : 5;
   score += commodityPts;
+  score += marketPts;
+  factors.push(...marketFactors);
   factors.push(commodity ? `${commodityPts ? '+' + commodityPts : '+0'}: ${commodity[2]}` : '+5 for a commodity outside our usual list');
   const docCount = manifest?.files?.length ?? 0;
   if (docCount >= 3) {
