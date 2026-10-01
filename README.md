@@ -1,554 +1,120 @@
-# EarnX Protocol
+# EarnX
 
-### Democratizing Trade Finance for Africa's Next Generation of Exporters
+**Get paid when you ship, not when your buyer pays.**
 
----
+EarnX turns a verified export invoice into cash for an African exporter today. Investors anywhere fund it in **Paxos USDG** (or Circle USDC) and earn the yield when the buyer pays. Everything that moves money is enforced by smart contracts on **Robinhood Chain** and **Arbitrum**.
 
-## The $1.6 Trillion Problem
-
-**Africa has a trade finance crisis.**
-
-Every year, African businesses face a staggering **$1.6 trillion trade finance gap**—the largest in the world relative to GDP. This isn't just a statistic; it's millions of farmers, manufacturers, and entrepreneurs who can't access the capital they need to participate in global trade.
-
-### The Reality on the Ground
-
-Meet Amara, a cassava flour exporter in Lagos, Nigeria. Her company, Amara Foods Ltd, has a confirmed $50,000 order from a buyer in Accra, Ghana. The buyer will pay in 60 days. But Amara needs capital **now** to:
-
-- Purchase raw cassava from farmers
-- Process and package the flour
-- Ship the goods to Ghana
-- Pay her workers
-
-**What happens when Amara goes to a traditional bank?**
-
-| Challenge | Traditional Banking Reality |
-|-----------|---------------------------|
-| **Approval Time** | 60-90 days (by then, she's lost the order) |
-| **Interest Rate** | 15-25% APR |
-| **Funding Ratio** | 70-80% of invoice value |
-| **Minimum Amount** | Often $100,000+ |
-| **Documentation** | Weeks of paperwork |
-| **Collateral** | Physical assets required |
-| **Result** | **70% of SMEs are rejected** |
-
-Amara's story repeats itself across the continent—**70% of African SMEs lack access to trade finance**. The consequences are devastating:
-
-- Exporters sell to local wholesalers at heavy discounts
-- Farmers receive lower prices for their crops
-- Jobs aren't created
-- Communities stay impoverished
-- Africa's potential remains locked
+**[Live app → earnx-app.vercel.app](https://earnx-app.vercel.app)** · [Contracts](contracts/) · [Robinhood Chain protocol](https://explorer.testnet.chain.robinhood.com/address/0xA7fC55ca10c05aA2a0e0Cef5e00f15B08Caf4a99) · [Arbitrum Sepolia protocol](https://arbitrum-sepolia.blockscout.com/address/0x0D0C0eE2a93D4E6d912da43810Ca8f327BDc7341)
 
 ---
 
-## Our Solution: EarnX Protocol
+## The problem
 
-**EarnX is the "Robinhood of African Trade Finance"**—a decentralized platform that connects African exporters directly with global investors, bypassing the broken traditional banking system.
+A confirmed export order is not cash. An exporter pays farmers, processors and freight up front, then waits weeks or months for the buyer to pay. Banks rarely lend against those invoices, so good orders are turned down, or sold to middlemen at a discount.
 
-### How It Works
+- **$74–92 billion** of trade finance requested by African businesses went unmet in 2024 ([African Development Bank](https://www.gtreview.com/news/africa/africas-trade-finance-gap-tops-us74bn-as-banks-retreat-afdb-warns/)).
+- **37%** of trade finance applications from African firms were rejected between 2020 and 2024 (same source).
+- Africa's factoring market was about **€50 billion** in 2024; Afreximbank estimates it must reach **€240 billion** to close the SME gap ([Afreximbank via GTR](https://www.gtreview.com/news/africa/factoring-volumes-must-reach-e240bn-to-close-sme-financing-gap-afreximbank-says/)).
 
-```
-┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
-│   EXPORTER      │         │   EARNX         │         │   INVESTOR      │
-│   (Africa)      │────────▶│   PROTOCOL      │◀────────│   (Global)      │
-│                 │         │                 │         │                 │
-│ • Submit Invoice│         │ • Verify Trade  │         │ • Browse Deals  │
-│ • Upload Docs   │         │ • Assess Risk   │         │ • Fund Invoices │
-│ • Get Funded    │         │ • Manage Funds  │         │ • Earn Returns  │
-└─────────────────┘         └─────────────────┘         └─────────────────┘
+<!-- Founder story section: added when written. -->
+
+## What EarnX does
+
+**For exporters**
+- Sign in with a fingerprint or Face ID (a passkey smart account). No wallet app, no seed phrase, and network fees are sponsored.
+- Upload the invoice and shipping documents. They go to IPFS; their fingerprint goes on-chain.
+- Once verified and fully funded, up to 90% of the invoice lands in your account **in the same transaction**.
+- Every verified invoice mints a **non-transferable record** to you: an on-chain trade history that belongs to you, not to a bank's filing cabinet.
+
+**For investors**
+- Browse real invoices with their terms, risk score and documents, without connecting a wallet.
+- Fund any amount from 1 USDG. When the buyer pays, claim your share of principal plus yield.
+- Check for yourself that an invoice's documents still match what the verifier reviewed: the app hashes them in your browser and compares with the chain.
+
+## How it works
+
+```mermaid
+sequenceDiagram
+    participant E as Exporter
+    participant V as Verifier
+    participant P as EarnXProtocol
+    participant I as Investors
+    participant B as Buyer
+    E->>P: submitInvoice(amount, due date, buyer, docs CID + hash)
+    V->>P: verifyInvoice(risk score, APR, advance rate)
+    P-->>E: soulbound invoice NFT (trade record)
+    I->>P: invest(USDG)
+    P-->>E: advance paid automatically when fully funded (minus 1% to the reserve)
+    B->>P: repay(principal + interest), in parts or in full
+    I->>P: claim() pro-rata share
+    Note over P: Past due + 30-day grace: anyone can markDefault.<br/>The first-loss reserve covers investor principal,<br/>and later recoveries refill it.
 ```
 
-### The EarnX Difference
+**What keeps it honest**
+- **Short and self-liquidating.** Each advance is tied to one shipment and repaid when that buyer pays. Terms are capped at 365 days on-chain.
+- **First-loss reserve.** 1% of every advance, plus any capital partners add, covers investor principal before investors lose anything. It can only be used for that.
+- **Documents you can check.** Each invoice stores the keccak256 of a manifest listing every document and its own hash. A verifier signature is bound to that exact hash.
+- **No hidden levers.** The admin can pause new activity and allow-list stablecoins. It cannot move investor funds.
 
-| Metric | Traditional Banking | EarnX Protocol |
-|--------|-------------------|----------------|
-| **Approval Time** | 60-90 days | **24 hours** |
-| **Interest Rate** | 15-25% APR | **8-20% APR** |
-| **Funding Ratio** | 70-80% | **90%** |
-| **Minimum Investment** | $50,000+ | **$1,000** |
-| **Risk Assessment** | Manual (2-3 weeks) | **Real-time (Chainlink)** |
-| **Transparency** | Limited | **Full on-chain** |
-| **Global Access** | Restricted | **Worldwide** |
-| **Currency Risk** | High exposure | **Mitigated with oracles** |
+## Try it
 
----
+1. Open **[earnx-app.vercel.app](https://earnx-app.vercel.app)** and pick a network (Robinhood Chain or Arbitrum).
+2. Browse **Invest**. Invoices marked *sample* are fictional and seeded for the demo; invoice #6 on each chain has already gone through the whole cycle to **Repaid**.
+3. To fund one, get testnet ETH ([Robinhood](https://faucet.testnet.chain.robinhood.com), [Arbitrum](https://arbitrum.faucet.dev)) and test [USDG](https://faucet.paxos.com) or [USDC](https://faucet.circle.com), connect a wallet and invest from 1 USDG.
+4. To see the exporter side, go to **Get paid early**, sign in with a passkey or wallet, upload a PDF and submit. The automated pre-screen checks the documents and opens the invoice for funding within seconds.
 
-## Why Africa? Why Now?
+## Deployments
 
-### The Opportunity
+| Network | EarnXProtocol | EarnXInvoiceNFT | Settlement |
+|---|---|---|---|
+| Robinhood Chain testnet (46630) | [`0xA7fC55ca10c05aA2a0e0Cef5e00f15B08Caf4a99`](https://explorer.testnet.chain.robinhood.com/address/0xA7fC55ca10c05aA2a0e0Cef5e00f15B08Caf4a99) | [`0x7c2e27323578C67B4c2E847024D80091586503d6`](https://explorer.testnet.chain.robinhood.com/address/0x7c2e27323578C67B4c2E847024D80091586503d6) | Paxos USDG |
+| Arbitrum Sepolia (421614) | [`0x0D0C0eE2a93D4E6d912da43810Ca8f327BDc7341`](https://arbitrum-sepolia.blockscout.com/address/0x0D0C0eE2a93D4E6d912da43810Ca8f327BDc7341) | [`0xc9A10EDA07ea8D90dB95254540efb7F00907f888`](https://arbitrum-sepolia.blockscout.com/address/0xc9A10EDA07ea8D90dB95254540efb7F00907f888) | Paxos USDG, Circle USDC |
 
-- **1.3 billion people** and growing—Africa is the world's youngest and fastest-growing continent
-- **$40 billion** in annual trade finance that SMEs need but can't access
-- **African Continental Free Trade Area (AfCFTA)** creating the world's largest free trade zone
-- **Mobile money adoption** making Africans more financially connected than ever
-- **Growing diaspora** eager to invest in continental development
+All contracts are source-verified on Blockscout.
 
-### The Problem We're Solving
+## Architecture
 
-Traditional banks have failed African trade for decades because:
+| Part | What it is |
+|---|---|
+| [`contracts/`](contracts/) | Foundry project. `EarnXProtocol` (lifecycle, pricing, reserve) and `EarnXInvoiceNFT` (ERC-5192 soulbound records with on-chain SVG metadata). OpenZeppelin 5.7: AccessControl, SafeERC20, ReentrancyGuard, Pausable, EIP-712, Nonces. 29 tests including fuzz tests; CI on every push. |
+| [`app/`](app/) | Vite + React + TypeScript, wagmi + RainbowKit for wallets, ZeroDev Kernel v3.1 for passkey accounts with sponsored gas, Tailwind. ABIs and addresses are generated from `contracts/` so the app cannot drift from the chain. |
+| [`app/api/upload`](app/api/upload.ts) | Serverless function that pins documents to IPFS through Pinata and returns the manifest CID and hash. The Pinata key never reaches the browser. |
+| [`app/api/verify`](app/api/verify.ts) | Automated pre-screen for the testnet: re-fetches the documents from IPFS, checks them against the on-chain hash, applies published rules, and verifies or rejects the invoice with a key that holds `VERIFIER_ROLE` and nothing else. |
 
-1. **High perceived risk** — Banks see Africa as risky without understanding local trade dynamics
-2. **Expensive due diligence** — Physical verification costs more than small deals are worth
-3. **Currency volatility** — No efficient way to hedge African currency exposure
-4. **Information asymmetry** — No standardized way to assess African supplier creditworthiness
-5. **Regulatory complexity** — Cross-border compliance is a nightmare
+**Why Robinhood Chain and Arbitrum.** Both are Arbitrum chains with low fees and fast blocks. Robinhood Chain is built for real-world assets and has USDG natively; Arbitrum has deep stablecoin liquidity and native USDC. The same contracts run on both.
 
-### Our Answer
+## Built during the Arbitrum Open House Singapore buildathon
 
-EarnX uses blockchain technology to solve each of these problems:
+Everything before the buildathon is tagged [`pre-buildathon`](https://github.com/big14way/earnx/tree/pre-buildathon) (an earlier Mantle Sepolia version). **[See every change since →](https://github.com/big14way/earnx/compare/pre-buildathon...main)**
 
-| Problem | EarnX Solution |
-|---------|---------------|
-| High perceived risk | Chainlink oracles for real-time commodity prices and automated risk scoring |
-| Expensive due diligence | Smart contract verification with cryptographic document proofs |
-| Currency volatility | Real-time currency feeds (NGN, GHS, KES, ZAR) with USDC settlement |
-| Information asymmetry | On-chain track record building for African exporters |
-| Regulatory complexity | Transparent audit trail for compliance |
+During the buildathon we:
+- rewrote the contracts from scratch: the previous contract accepted deposits but had no payout, repayment or claim path, and approved every invoice automatically;
+- added the first-loss reserve, EIP-712 verifier signatures bound to document hashes, and soulbound trade records;
+- wrote the test suite and CI, then deployed and verified on Robinhood Chain testnet and Arbitrum Sepolia with Paxos USDG;
+- rebuilt the app around live on-chain data (the old one showed hardcoded figures), added passkey accounts with sponsored gas, IPFS uploads and the automated verifier;
+- removed hardcoded credentials and the unused Morph/Mantle-era code.
 
----
+## Security and limitations
 
-## Features
+- **Testnet only.** The contracts are not audited. Do not use real funds.
+- **Verification is the trust point.** On the testnet an automated pre-screen approves invoices that pass document and limit checks. In production this is where buyer confirmation and a licensed partner's review belong; the contract already accepts any approved verifier, including signed approvals from off-chain reviewers.
+- **Repayment depends on the buyer.** The reserve softens defaults but cannot remove them. Default rates and reserve levels are shown publicly in the app.
 
-### For Exporters
-
-- **Fast Invoice Submission** — Upload trade invoices with export documentation (commercial invoice, certificate of origin, bill of lading, export declaration)
-- **Automated Verification** — AI and Chainlink-powered risk assessment in hours, not weeks
-- **90% Funding Ratio** — Get most of your invoice value upfront
-- **Fair APR** — 8-20% based on actual risk, not arbitrary bank decisions
-- **Track Record Building** — Every successful trade builds your on-chain reputation
-
-### For Investors
-
-- **Verified Opportunities** — Browse risk-scored, verified trade finance deals
-- **Low Minimum** — Start investing with just $1,000 USDC
-- **Real-time Data** — Live commodity prices and currency rates via Chainlink
-- **Portfolio Dashboard** — Track investments, returns, and performance
-- **NFT Receipts** — Each investment minted as an ERC-721 token for transparency and tradability
-- **Automated Returns** — Smart contracts distribute profits upon invoice repayment
-
-### Technology Highlights
-
-- **Chainlink Price Feeds** — Real-time pricing for coffee, cocoa, gold, cotton, cassava, and more
-- **Chainlink VRF** — Cryptographically secure random invoice ID generation
-- **Cross-Chain (CCIP)** — Bridge invoices between Mantle and Ethereum for liquidity
-- **IPFS Storage** — All documents stored permanently via Pinata
-- **Gas Optimized** — Built on Mantle for sub-cent transaction fees
-
----
-
-## Supported Markets
-
-### African Commodities
-
-| Commodity | Common Export Routes |
-|-----------|---------------------|
-| Cassava | Nigeria → Ghana, Cameroon |
-| Coffee | Ethiopia, Kenya → Global |
-| Cocoa | Ghana, Ivory Coast → Europe, USA |
-| Cotton | Burkina Faso, Mali → Asia |
-| Gold | Ghana, Tanzania → Global |
-| Tea | Kenya, Rwanda → Global |
-| Spices | Madagascar, Tanzania → Global |
-
-### African Currencies (Real-time Conversion)
-
-- 🇳🇬 **NGN** — Nigerian Naira
-- 🇬🇭 **GHS** — Ghanaian Cedi
-- 🇰🇪 **KES** — Kenyan Shilling
-- 🇿🇦 **ZAR** — South African Rand
-
----
-
-## Live Demo
-
-**Try EarnX now:** [https://frontend1-ten-umber.vercel.app/](https://frontend1-ten-umber.vercel.app/)
-
-> Note: This is a testnet deployment. Use Mantle Sepolia testnet tokens for testing.
-
----
-
-## Technology Stack
-
-### Frontend
-- **Framework:** React 18 with TypeScript
-- **Styling:** Tailwind CSS with custom animations
-- **Web3:** wagmi, viem, ethers.js
-- **Wallet:** RainbowKit for multi-wallet support
-- **State:** React Context + React Query
-
-### Smart Contracts (Solidity 0.8.19+)
-- **Core Protocol:** MantleEarnXProtocol.sol
-- **Price Management:** ChainlinkEnhancedPriceManager.sol
-- **Random Generation:** ChainlinkVRFInvoiceGenerator.sol
-- **Cross-Chain:** CCIPSourceMinterMantle.sol, CCIPDestinationMinterEthereum.sol
-- **NFT System:** EarnXInvoiceNFT.sol (ERC-721)
-- **Investment Module:** EarnXInvestmentModule.sol
-- **Verification:** MantleEarnXVerificationModule.sol
-
-### Backend
-- **Framework:** NestJS
-- **Database:** MongoDB
-- **Document Storage:** IPFS via Pinata
-- **Verification:** EIP-712 signature verification
-
-### Blockchain
-- **Primary Network:** Mantle Sepolia (Chain ID: 5003)
-- **Secondary:** Ethereum Sepolia (for cross-chain NFTs)
-- **Oracles:** Chainlink Price Feeds, VRF, CCIP
-
----
-
-## Project Structure
-
-```
-EarnX/
-│
-├── contracts/                          # Smart Contracts (16 Solidity files)
-│   ├── MantleEarnXProtocol.sol        # Core protocol - invoice lifecycle
-│   ├── ChainlinkEnhancedPriceManager.sol  # Real-time price feeds
-│   ├── ChainlinkVRFInvoiceGenerator.sol   # Secure random ID generation
-│   ├── CCIPSourceMinterMantle.sol     # Cross-chain sender (Mantle)
-│   ├── CCIPDestinationMinterEthereum.sol  # Cross-chain receiver (Ethereum)
-│   ├── EarnXInvoiceNFT.sol            # ERC-721 tokenized invoices
-│   ├── MantleEarnXVerificationModule.sol  # EIP-712 verification
-│   ├── EarnXInvestmentModule.sol      # Investment management
-│   ├── MantleUSDC.sol                 # Test USDC with faucet
-│   └── mocks/                         # Mock contracts for testing
-│
-├── src/                               # React Frontend
-│   ├── components/
-│   │   ├── pages/
-│   │   │   ├── LandingPage.tsx       # Hero, features, CTA
-│   │   │   ├── Dashboard.tsx          # Portfolio tracking
-│   │   │   ├── InvestPage.tsx         # Investment opportunities
-│   │   │   └── SubmitInvoice.tsx      # Invoice submission form
-│   │   ├── ui/                        # Reusable UI components
-│   │   │   ├── InvestmentModal.tsx
-│   │   │   ├── InvestmentCalculator.tsx
-│   │   │   ├── LiveMarketData.tsx
-│   │   │   └── StatsCard.tsx
-│   │   └── layout/
-│   │       ├── Navigation.tsx
-│   │       └── Footer.tsx
-│   │
-│   ├── hooks/                         # Custom React Hooks
-│   │   ├── useEarnX.ts               # Main protocol interactions
-│   │   ├── useMantleEarnX.ts         # Mantle-specific functions
-│   │   ├── useNFTInvoiceSystem.ts    # NFT management
-│   │   └── useMarketData.ts          # Price feed integration
-│   │
-│   ├── abis/                          # Contract ABIs (13 files)
-│   ├── config/
-│   │   ├── wagmi.ts                  # Web3 configuration
-│   │   └── mantle.ts                 # Network settings
-│   ├── services/
-│   │   └── pinataService.ts          # IPFS upload service
-│   ├── types/                         # TypeScript definitions
-│   └── utils/                         # Helper functions
-│
-├── earnx-verification-api/            # Backend Service (NestJS)
-│   ├── src/
-│   └── Dockerfile
-│
-├── scripts/                           # Deployment Scripts (27 files)
-│   ├── deploy-mantle.js              # Main deployment
-│   ├── deploy-chainlink-enhanced.js  # Chainlink integration
-│   └── test-complete-flow.js         # E2E testing
-│
-├── test/                              # Contract Tests
-├── docs/                              # Documentation
-├── hardhat.config.ts                  # Hardhat configuration
-└── package.json
-```
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 16+
-- MetaMask or compatible Web3 wallet
-- MNT tokens for gas (Mantle Sepolia testnet)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/big14way/earnmant.git
-   cd earnmant
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-4. **Start development server**
-   ```bash
-   npm start
-   ```
-
-### Environment Variables
-
-```env
-# IPFS (Pinata)
-REACT_APP_PINATA_API_KEY=your_pinata_api_key
-REACT_APP_PINATA_SECRET_KEY=your_pinata_secret_key
-
-# Backend API
-REACT_APP_VERIFICATION_API_URL=https://earnx-verification-api.onrender.com
-
-# Deployment (for contract deployment)
-MANTLE_TESTNET_PRIVATE_KEY=your_private_key
-```
-
----
-
-## Network Configuration
-
-### Mantle Sepolia Testnet
-
-| Property | Value |
-|----------|-------|
-| **Chain ID** | 5003 |
-| **RPC URL** | https://rpc.sepolia.mantle.xyz |
-| **Block Explorer** | https://explorer.sepolia.mantle.xyz |
-| **Native Token** | MNT |
-| **Gas Price** | ~0.1 gwei |
-
-### Deployed Contract Addresses
-
-| Contract | Address |
-|----------|---------|
-| **SimpleEarnXProtocol** (Active) | `0x28E9D861Db74153630A85ee6950ab25aF90BF554` |
-| MantleEarnXProtocol (Legacy) | `0x95EAb385c669aca31C0d406c270d6EdDFED0D1ee` |
-| EarnXInvoiceNFT | `0x4f330C74c7bd84665722bA0664705e2f2E6080DC` |
-| MantleEarnXVerificationModule | `0x4adDFcfa066E0c955bC0347d9565454AD7Ceaae1` |
-| EarnXInvestmentModule | `0x199516b47F1ce8C77617b58526ad701bF1f750FA` |
-| MantlePriceManager | `0x789f82778A8d9eB6514a457112a563A89F79A2f1` |
-| MantleUSDC (Test) | `0x211a38792781b2c7a584a96F0e735d56e809fe85` |
-
----
-
-## Smart Contract Architecture
-
-### Invoice Lifecycle
-
-```
-┌──────────┐    ┌───────────┐    ┌──────────┐    ┌─────────────┐
-│ Submitted│───▶│ Verifying │───▶│ Verified │───▶│ FullyFunded │
-└──────────┘    └───────────┘    └──────────┘    └─────────────┘
-                     │                                  │
-                     ▼                                  ▼
-               ┌──────────┐                      ┌──────────┐
-               │ Rejected │                      │  Funded  │
-               └──────────┘                      └──────────┘
-                                                       │
-                                    ┌──────────────────┼──────────────────┐
-                                    ▼                                     ▼
-                              ┌──────────┐                          ┌───────────┐
-                              │  Repaid  │                          │ Defaulted │
-                              └──────────┘                          └───────────┘
-```
-
-### Key Smart Contract Features
-
-- **90% Funding Ratio** — Invoices receive 90% of their value in USDC
-- **Dynamic APR** — 8-20% range based on real-time risk assessment
-- **IPFS Integration** — All documents stored permanently on IPFS
-- **ERC-721 Tokenization** — Each invoice becomes a tradeable NFT
-- **Role-Based Access** — Separate permissions for suppliers, investors, and committee
-- **Gas Optimized** — Designed for Mantle's efficient execution
-
-### Chainlink Integration
-
-| Service | Purpose |
-|---------|---------|
-| **Price Feeds** | Real-time commodity and currency pricing |
-| **VRF** | Cryptographically secure random invoice IDs |
-| **CCIP** | Cross-chain NFT minting (Mantle ↔ Ethereum) |
-
----
-
-## Usage Guide
-
-### For Exporters (Suppliers)
-
-1. **Connect Wallet**
-   - Click "Connect Wallet" and select your Web3 wallet
-   - Ensure you're on Mantle Sepolia network
-
-2. **Submit an Invoice**
-   - Navigate to "Submit Invoice"
-   - Fill in trade details:
-     - Invoice amount and currency
-     - Buyer information
-     - Commodity type
-     - Trade route (origin → destination)
-   - Upload required documents to IPFS
-   - Submit for verification
-
-3. **Track Your Invoice**
-   - Monitor verification status in Dashboard
-   - Once verified, investors can fund your invoice
-   - Receive funds when fully funded
-
-### For Investors
-
-1. **Connect Wallet**
-   - Connect your Web3 wallet
-   - Get test USDC from the built-in faucet
-
-2. **Browse Opportunities**
-   - Visit "Invest" page
-   - Review verified invoices with:
-     - Risk scores
-     - Expected APR
-     - Funding progress
-     - Trade details
-
-3. **Make an Investment**
-   - Click "Invest" on a verified invoice
-   - Enter investment amount (min $1,000)
-   - Confirm transaction
-
-4. **Track Returns**
-   - Monitor portfolio in Dashboard
-   - Receive returns when invoice is repaid
-
-### Getting Test Tokens
-
-- **MNT:** [Mantle Sepolia Faucet](https://faucet.sepolia.mantle.xyz)
-- **USDC:** Use the built-in faucet in the app
-
----
-
-## Development
-
-### Available Scripts
+## Run it locally
 
 ```bash
-# Frontend
-npm start          # Start development server
-npm run build      # Build for production
-npm run test       # Run tests
+git clone --recurse-submodules https://github.com/big14way/earnx.git && cd earnx
 
-# Smart Contracts
-npx hardhat compile                    # Compile contracts
-npx hardhat test                       # Run contract tests
-npx hardhat run scripts/deploy-mantle.js --network mantleSepolia  # Deploy
+# contracts (needs Foundry)
+cd contracts && forge test && cd ..
+
+# app
+cd app && npm install && cp .env.example .env.local   # add a Reown project ID (and ZeroDev for passkeys)
+npm run dev
 ```
 
-### Running Tests
-
-```bash
-# Smart contract tests
-npx hardhat test
-
-# Frontend tests
-npm run test
-
-# End-to-end flow test
-npx hardhat run scripts/test-complete-flow.js --network mantleSepolia
-```
-
----
-
-## Impact & Vision
-
-### What Success Looks Like
-
-**For Amara (and millions like her):**
-- Receives 90% of her $50,000 invoice within 24 hours
-- Pays 12% APR instead of 25%
-- Fulfills her order to Ghana on time
-- Builds an on-chain credit history for future trades
-- Grows her business and employs more workers
-
-**For the African Diaspora:**
-- Directly invests in continental growth
-- Earns competitive returns (8-20% APR)
-- Full transparency on where money goes
-- Supports community economic development
-
-**For Africa:**
-- Unlocks billions in trapped trade value
-- Creates jobs across the supply chain
-- Builds financial infrastructure
-- Accelerates integration under AfCFTA
-
-### Roadmap
-
-- [x] Core protocol development
-- [x] Chainlink oracle integration
-- [x] Cross-chain NFT bridge (CCIP)
-- [x] Testnet deployment (Mantle Sepolia)
-- [ ] Security audit
-- [ ] Mainnet deployment
-- [ ] Mobile application
-- [ ] Additional African currencies
-- [ ] Traditional banking API integration
-- [ ] KYC/AML compliance module
-- [ ] Secondary NFT marketplace
-
----
-
-## Contributing
-
-We welcome contributions from developers passionate about African trade finance!
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## Security
-
-This is a testnet deployment for demonstration purposes.
-
-- **Do not use real funds**
-- **Smart contracts have not been audited**
-- **Do not submit real trade documentation**
-
-For security concerns, please open a GitHub issue or contact the team directly.
-
----
+Deployment scripts and the sample-invoice seeder are documented in [`contracts/README.md`](contracts/README.md).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## Contact & Support
-
-- **GitHub Issues:** Report bugs or request features
-- **Documentation:** Check `/docs` folder for technical details
-
----
-
-## Acknowledgments
-
-- **Mantle Network** — For providing a fast, low-cost L2 infrastructure
-- **Chainlink** — For reliable oracle services enabling real-world data integration
-- **African Trade Community** — For inspiring us to build solutions that matter
-
----
-
-<div align="center">
-
-**Built with purpose for Africa's future**
-
-[Live Demo](https://frontend1-ten-umber.vercel.app/) · [Report Bug](https://github.com/big14way/earnmant/issues) · [Request Feature](https://github.com/big14way/earnmant/issues)
-
-</div>
+[MIT](LICENSE)
