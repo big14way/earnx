@@ -24,7 +24,7 @@ module.exports = {
       allowUnlimitedContractSize: true,
     },
     sepolia: {
-      url: "https://eth-sepolia.g.alchemy.com/v2/J6loM2kcvrC21YpzGrM0Sxfuh3-p5OKP",
+      url: process.env.SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com',
       accounts: process.env.MANTLE_TESTNET_PRIVATE_KEY ? ['0x' + process.env.MANTLE_TESTNET_PRIVATE_KEY] : [],
       chainId: 11155111,
       gas: 6000000,
