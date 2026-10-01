@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
 import type { Address } from 'viem';
-import { PasskeySession } from '../lib/passkey';
+import type { PasskeySession } from '../lib/passkey';
 import { defaultChainId, isSupportedChain, type SupportedChainId } from '../lib/chains';
 
 type AccountState = {
@@ -38,6 +38,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         safeStorage('set', 'earnx.chain', String(id));
       },
       startPasskey: async (mode, name) => {
+        const { PasskeySession } = await import('../lib/passkey');
         setPasskey(await PasskeySession.start(mode, name, chainId));
       },
       signOut: () => {

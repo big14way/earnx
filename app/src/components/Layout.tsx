@@ -10,11 +10,11 @@ const NAV = [
   { to: '/how-it-works', label: 'How it works' },
 ];
 
-export function Logo() {
+export function Logo({ light = false }: { light?: boolean }) {
   return (
     <Link to="/" className="flex items-center gap-2">
       <img src="/favicon.svg" alt="" className="h-8 w-8" />
-      <span className="font-display text-xl font-bold tracking-tight text-ink">EarnX</span>
+      <span className={`font-display text-xl font-bold tracking-tight ${light ? 'text-paper' : 'text-ink'}`}>EarnX</span>
     </Link>
   );
 }
@@ -22,19 +22,37 @@ export function Logo() {
 export function Layout() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
-  useEffect(() => window.scrollTo(0, 0), [pathname]);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  const dark = pathname === '/' && !scrolled && !open;
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-30 border-b border-line/70 bg-paper/90 backdrop-blur">
+      <header
+        className={`sticky top-0 z-30 border-b transition-colors duration-300 ${
+          dark ? 'border-white/10 bg-transparent' : 'border-line/70 bg-paper/90 backdrop-blur'
+        }`}
+      >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <Logo />
+          <Logo light={dark} />
           <nav className="hidden items-center gap-1 lg:flex">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
                 to={n.to}
                 className={({ isActive }) =>
-                  `rounded-full px-3 py-2 text-sm font-medium transition ${isActive ? 'bg-ink text-paper' : 'text-ink-soft hover:bg-line/60'}`
+                  `rounded-full px-3 py-2 text-sm font-medium transition ${
+                    isActive
+                      ? dark ? 'bg-paper text-ink' : 'bg-ink text-paper'
+                      : dark ? 'text-paper/80 hover:bg-white/10' : 'text-ink-soft hover:bg-line/60'
+                  }`
                 }
               >
                 {n.label}
@@ -42,10 +60,12 @@ export function Layout() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <ChainSwitcher className="hidden md:inline-flex" />
+            <div className="hidden md:block">
+              <ChainSwitcher tone={dark ? 'dark' : 'light'} />
+            </div>
             <AccountButton />
             <button
-              className="rounded-full border border-line p-2 lg:hidden"
+              className={`rounded-full border p-2 lg:hidden ${dark ? 'border-white/20 text-paper' : 'border-line'}`}
               onClick={() => setOpen(!open)}
               aria-label="Menu"
             >
@@ -57,7 +77,9 @@ export function Layout() {
         </div>
         {open && (
           <div className="border-t border-line px-4 pb-4 lg:hidden">
-            <ChainSwitcher className="mt-3 md:hidden" />
+            <div className="mt-3 md:hidden">
+              <ChainSwitcher />
+            </div>
             <nav className="mt-2 flex flex-col">
               {NAV.map((n) => (
                 <NavLink key={n.to} to={n.to} onClick={() => setOpen(false)} className="py-2 text-base font-medium">

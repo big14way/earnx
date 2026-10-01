@@ -1,7 +1,8 @@
-import { StrictMode } from 'react';
+import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, Route, Routes } from 'react-router';
 import { WagmiProvider } from 'wagmi';
+import { MotionConfig } from 'motion/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { lightTheme, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
@@ -11,22 +12,24 @@ import { AccountProvider } from './hooks/useAccountSession';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Home } from './pages/Home';
-import { Invest } from './pages/Invest';
-import { InvoiceDetail } from './pages/InvoiceDetail';
-import { Exporters } from './pages/Exporters';
-import { Portfolio } from './pages/Portfolio';
-import { HowItWorks } from './pages/HowItWorks';
+const Invest = lazy(() => import('./pages/Invest').then((m) => ({ default: m.Invest })));
+const InvoiceDetail = lazy(() => import('./pages/InvoiceDetail').then((m) => ({ default: m.InvoiceDetail })));
+const Exporters = lazy(() => import('./pages/Exporters').then((m) => ({ default: m.Exporters })));
+const Portfolio = lazy(() => import('./pages/Portfolio').then((m) => ({ default: m.Portfolio })));
+const HowItWorks = lazy(() => import('./pages/HowItWorks').then((m) => ({ default: m.HowItWorks })));
 
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
+    <MotionConfig reducedMotion="user">
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={lightTheme({ accentColor: '#10231a', borderRadius: 'large' })}>
+        <RainbowKitProvider theme={lightTheme({ accentColor: '#c8f169', accentColorForeground: '#10231a', borderRadius: 'large' })}>
           <AccountProvider>
             <BrowserRouter>
+              <Suspense fallback={<div className="min-h-screen" />}>
               <Routes>
                 <Route element={<Layout />}>
                   <Route index element={<Home />} />
@@ -46,11 +49,13 @@ createRoot(document.getElementById('root')!).render(
                   />
                 </Route>
               </Routes>
+              </Suspense>
             </BrowserRouter>
           </AccountProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
+    </MotionConfig>
     </ErrorBoundary>
   </StrictMode>,
 );
