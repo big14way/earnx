@@ -6,6 +6,7 @@ import { InvoiceCard } from '../components/InvoiceCard';
 import { LiveTicker } from '../components/LiveTicker';
 import { NftPreview } from '../components/NftPreview';
 import { CountUp, Float, Reveal, Stagger, TiltCard, WordReveal } from '../components/motion';
+import { CostCompare } from '../components/CostCompare';
 import { Skeleton } from '../components/ui';
 import { founderStory } from '../content/story';
 import { useAccountSession } from '../hooks/useAccountSession';
@@ -181,6 +182,8 @@ export function Home() {
           </div>
         </section>
       )}
+
+      <CostCompare />
 
       {/* ---------------- How it works ---------------- */}
       <section className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
