@@ -40,3 +40,82 @@ select,
 textarea {
   font: inherit;
 }
+
+/* ---------- Hero backdrop ---------- */
+.aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.55;
+  will-change: transform;
+}
+.aurora-1 {
+  width: 46vw;
+  height: 46vw;
+  left: -12vw;
+  top: -18vw;
+  background: radial-gradient(circle, #2f8f5f 0%, transparent 70%);
+  animation: drift-1 22s ease-in-out infinite alternate;
+}
+.aurora-2 {
+  width: 38vw;
+  height: 38vw;
+  right: -8vw;
+  top: 4vw;
+  background: radial-gradient(circle, rgba(200, 241, 105, 0.55) 0%, transparent 70%);
+  animation: drift-2 26s ease-in-out infinite alternate;
+}
+.aurora-3 {
+  width: 34vw;
+  height: 34vw;
+  left: 30vw;
+  bottom: -20vw;
+  background: radial-gradient(circle, rgba(232, 168, 56, 0.45) 0%, transparent 70%);
+  animation: drift-3 30s ease-in-out infinite alternate;
+}
+@keyframes drift-1 {
+  to { transform: translate(10vw, 8vw) scale(1.15); }
+}
+@keyframes drift-2 {
+  to { transform: translate(-12vw, 10vw) scale(0.9); }
+}
+@keyframes drift-3 {
+  to { transform: translate(-8vw, -10vw) scale(1.2); }
+}
+.hero-grid {
+  background-image: linear-gradient(rgba(246, 241, 231, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(246, 241, 231, 0.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 75%);
+}
+.grain {
+  opacity: 0.18;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Marquee ---------- */
+.marquee {
+  mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 32s linear infinite;
+}
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+
+/* ---------- Route line in "How it works" ---------- */
+@keyframes travel {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora,
+  .marquee-track {
+    animation: none;
+  }
+}

@@ -1,6 +1,6 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { http } from 'wagmi';
-import { arbitrumSepolia, robinhoodTestnet, rpcUrl } from './chains';
+import { fallback, http } from 'wagmi';
+import { arbitrumSepolia, publicRpcUrl, robinhoodTestnet, rpcUrl } from './chains';
 
 export const wagmiConfig = getDefaultConfig({
   appName: 'EarnX',
@@ -10,7 +10,8 @@ export const wagmiConfig = getDefaultConfig({
     { ...arbitrumSepolia, iconUrl: '/chains/arbitrum.svg', iconBackground: '#213147' },
   ],
   transports: {
-    [robinhoodTestnet.id]: http(rpcUrl[robinhoodTestnet.id]),
-    [arbitrumSepolia.id]: http(rpcUrl[arbitrumSepolia.id]),
+    // Alchemy first when configured, public RPC if it errors or is rate-limited.
+    [robinhoodTestnet.id]: fallback([http(rpcUrl[robinhoodTestnet.id]), http(publicRpcUrl[robinhoodTestnet.id])]),
+    [arbitrumSepolia.id]: fallback([http(rpcUrl[arbitrumSepolia.id]), http(publicRpcUrl[arbitrumSepolia.id])]),
   },
 });

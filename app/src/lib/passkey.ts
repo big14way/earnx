@@ -22,8 +22,6 @@ const projectId = import.meta.env.VITE_ZERODEV_PROJECT_ID as string | undefined;
 const entryPoint = getEntryPoint('0.7');
 const passkeyServerUrl = `https://passkeys.zerodev.app/api/v3/${projectId}`;
 
-export const passkeysEnabled = Boolean(projectId);
-
 type WebAuthnKey = Awaited<ReturnType<typeof toWebAuthnKey>>;
 type KernelClient = Awaited<ReturnType<typeof buildClient>>;
 

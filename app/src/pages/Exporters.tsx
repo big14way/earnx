@@ -12,7 +12,7 @@ import { useAccountSession } from '../hooks/useAccountSession';
 import { protocolCall, readableError, useEarnXWrite } from '../hooks/useEarnXWrite';
 import { useInvoices } from '../hooks/useInvoices';
 import { chainMeta, contractsFor, explorerUrl, tokensFor } from '../lib/chains';
-import { passkeysEnabled } from '../lib/passkey';
+import { passkeysEnabled } from '../lib/passkeyConfig';
 import { percentFromBps } from '../lib/format';
 
 const AFRICAN_COUNTRIES = [
