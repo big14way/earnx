@@ -1,13 +1,7 @@
 {
-  "buildCommand": "cd frontend1 && npm run build",
-  "outputDirectory": "frontend1/build",
-  "installCommand": "cd frontend1 && npm install --legacy-peer-deps",
-  "devCommand": "cd frontend1 && npm start",
-  "framework": "create-react-app",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "installCommand": "echo 'frontend1 is retired; this project only redirects'",
+  "buildCommand": "mkdir -p .redirect && echo 'Moved to https://earnx-app.vercel.app' > .redirect/index.html",
+  "outputDirectory": ".redirect",
+  "framework": null,
+  "redirects": [{ "source": "/(.*)", "destination": "https://earnx-app.vercel.app/$1", "permanent": false }]
 }
