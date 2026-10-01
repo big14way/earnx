@@ -2692,7 +2692,9 @@ export const deployments = {
     "tokens": [
       "0x7E955252E15c84f5768B83c41a71F9eba181802F"
     ],
-    "deployedAtBlock": 127103838
+    "deployedAtBlock": 127103838,
+    "riskEngine": "0x454aeA0eDA332a09FFc61C5799B336AEa24Cd863",
+    "riskEngineSinceInvoice": 9
   },
   "421614": {
     "protocol": "0x0D0C0eE2a93D4E6d912da43810Ca8f327BDc7341",
@@ -2701,7 +2703,9 @@ export const deployments = {
       "0xFFC95faa3d63Cde504a05B567C600B78C0b41892",
       "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d"
     ],
-    "deployedAtBlock": 11821340
+    "deployedAtBlock": 11821340,
+    "riskEngine": "0xb78d4d4FDCBd5e2E73405091138B08bd1707d551",
+    "riskEngineSinceInvoice": 7
   }
 } as const;
 

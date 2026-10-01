@@ -56,6 +56,9 @@ export function contractsFor(chainId: SupportedChainId) {
     invoiceNFT: d.invoiceNFT as Address,
     tokens: d.tokens as readonly Address[],
     deployedAtBlock: BigInt(d.deployedAtBlock),
+    riskEngine: (d.riskEngine ?? undefined) as Address | undefined,
+    /** Invoices with this id or higher were priced by the risk engine. */
+    riskEngineSinceInvoice: d.riskEngineSinceInvoice ? BigInt(d.riskEngineSinceInvoice) : undefined,
   };
 }
 

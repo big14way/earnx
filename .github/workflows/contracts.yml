@@ -19,3 +19,15 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
       - run: forge build --sizes
       - run: forge test -vv
+
+  stylus:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/stylus/risk-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.91.0
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo test --lib

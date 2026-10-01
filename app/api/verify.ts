@@ -101,7 +101,24 @@ export async function POST(request: Request) {
     args: [id, score, aprBps, advanceBps],
   });
   await publicClient.waitForTransactionReceipt({ hash });
-  return Response.json({ status: 'verified', riskScore: score, aprBps, advanceBps, checks, factors, txHash: hash });
+
+  // When a risk engine is set (the Rust/Stylus contract), it sets the final APR and advance on-chain,
+  // so report what the contract actually stored rather than the proposal above.
+  const [stored, engine] = await Promise.all([
+    publicClient.readContract({ address: protocol, abi: protocolAbi, functionName: 'getInvoice', args: [id] }),
+    publicClient.readContract({ address: protocol, abi: protocolAbi, functionName: 'riskEngine' }),
+  ]);
+  const pricedByEngine = engine !== '0x0000000000000000000000000000000000000000';
+  return Response.json({
+    status: 'verified',
+    riskScore: score,
+    aprBps: stored.aprBps,
+    advanceBps: stored.advanceBps,
+    pricedBy: pricedByEngine ? { kind: 'stylus', address: engine } : { kind: 'verifier' },
+    checks,
+    factors: pricedByEngine ? [...factors, 'APR and advance set on-chain by the Rust (Stylus) risk engine'] : factors,
+    txHash: hash,
+  });
 }
 
 async function fetchFromIpfs(cid: string): Promise<Uint8Array | undefined> {
