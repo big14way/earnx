@@ -46,7 +46,9 @@ export async function POST(request: Request) {
 async function pin(jwt: string, blob: Blob, name: string): Promise<string> {
   const body = new FormData();
   body.append('file', blob, name);
-  body.append('pinataMetadata', JSON.stringify({ name: `earnx/${name}` }));
+  // A "/" in the name makes Pinata wrap the file in a directory, which changes what the CID serves.
+  body.append('pinataMetadata', JSON.stringify({ name: `earnx-${name.replace(/[\\/]/g, '-')}` }));
+  body.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
   const res = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
     method: 'POST',
     headers: { Authorization: `Bearer ${jwt}` },

@@ -1,7 +1,7 @@
 import { createPublicClient, createWalletClient, http, keccak256, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { arbitrumSepolia, robinhoodTestnet } from 'viem/chains';
-import { deployments, protocolAbi } from '../src/abi/earnx';
+import { deployments, protocolAbi } from '../src/abi/earnx.js';
 
 /**
  * Automated pre-screen for testnet invoices. It re-downloads the documents from IPFS, checks
@@ -12,7 +12,11 @@ import { deployments, protocolAbi } from '../src/abi/earnx';
  * the contract already accepts any verifier, including EIP-712 signatures from off-chain reviewers.
  */
 const CHAINS = { [robinhoodTestnet.id]: robinhoodTestnet, [arbitrumSepolia.id]: arbitrumSepolia } as const;
-const GATEWAYS = ['https://gateway.pinata.cloud/ipfs/', 'https://ipfs.io/ipfs/'];
+const GATEWAYS = [
+  ...(process.env.PINATA_GATEWAY ? [`https://${process.env.PINATA_GATEWAY}/ipfs/`] : []),
+  'https://gateway.pinata.cloud/ipfs/',
+  'https://ipfs.io/ipfs/',
+];
 const MAX_AUTO_FACE_VALUE = 250_000n * 1_000_000n; // above this, a human reviews it
 const MAX_AUTO_TENOR_DAYS = 180;
 
@@ -47,8 +51,9 @@ export async function POST(request: Request) {
     checks.push({ ok: false, label: 'No documents were uploaded to IPFS' });
   } else {
     const bytes = await fetchFromIpfs(inv.docsCID);
-    if (!bytes) checks.push({ ok: false, label: 'Documents could not be retrieved from IPFS' });
-    else if (keccak256(bytes) !== inv.docsHash) checks.push({ ok: false, label: 'Documents do not match the hash on-chain' });
+    // Freshly pinned files can take a moment to reach gateways: ask the caller to retry rather than reject.
+    if (!bytes) return Response.json({ status: 'pending', reason: 'Documents are still propagating on IPFS. Try again shortly.' });
+    if (keccak256(bytes) !== inv.docsHash) checks.push({ ok: false, label: 'Documents do not match the hash on-chain' });
     else {
       manifest = JSON.parse(new TextDecoder().decode(bytes));
       checks.push({ ok: true, label: `${manifest?.files?.length ?? 0} document(s) retrieved and match the on-chain hash` });

@@ -24,7 +24,8 @@ type Verdict =
   | { status: 'verified'; riskScore: number; aprBps: number; advanceBps: number; checks: Check[]; factors: string[]; txHash: Hex }
   | { status: 'rejected'; reason: string; checks: Check[]; txHash: Hex }
   | { status: 'skipped'; reason: string }
-  | { error: string };
+  | { status: 'pending'; reason: string }
+  | { status?: undefined; error: string };
 type Check = { ok: boolean; label: string };
 
 export function Exporters() {
@@ -170,12 +171,17 @@ function SubmitForm() {
       setInvoiceId(id);
 
       setStep('verifying');
-      const v = await fetch('/api/verify', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ chainId, invoiceId: id.toString() }),
-      });
-      setVerdict((await v.json()) as Verdict);
+      let result: Verdict = { status: 'pending', reason: '' };
+      for (let attempt = 0; attempt < 8 && result.status === 'pending'; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 5_000));
+        const v = await fetch('/api/verify', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ chainId, invoiceId: id.toString() }),
+        });
+        result = (await v.json()) as Verdict;
+      }
+      setVerdict(result.status === 'pending' ? undefined : result);
       setStep('done');
     } catch (err) {
       setError(readableError(err) === 'Something went wrong. Please try again.' ? (err as Error).message : readableError(err));
@@ -234,7 +240,7 @@ function SubmitForm() {
 
 function Result({ verdict, chainId, id, onAnother }: { verdict?: Verdict; chainId: number; id: bigint; onAnother: () => void }) {
   const link = `/invoice/${chainId}/${id}`;
-  if (!verdict || 'error' in verdict || verdict.status === 'skipped') {
+  if (!verdict || verdict.status === undefined || verdict.status === 'skipped' || verdict.status === 'pending') {
     return (
       <Card className="p-6 sm:p-8">
         <h3 className="font-display text-2xl font-semibold">Invoice #{id.toString()} submitted</h3>

@@ -4,7 +4,7 @@ import { sampleDocs } from '../abi/earnx';
 
 const REPO_RAW = 'https://raw.githubusercontent.com/big14way/earnx/main/';
 const REPO_BLOB = 'https://github.com/big14way/earnx/blob/main/';
-export const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
+export const IPFS_GATEWAY = `https://${(import.meta.env.VITE_IPFS_GATEWAY as string | undefined) ?? 'ipfs.io'}/ipfs/`;
 
 /** Fetches the invoice's document bundle and checks it against the hash stored on-chain. */
 export function DocumentCheck({ docsHash, docsCID }: { docsHash: Hex; docsCID: string }) {
