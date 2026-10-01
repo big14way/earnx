@@ -57,7 +57,8 @@ sequenceDiagram
     participant I as Investors
     participant B as Buyer
     E->>P: submitInvoice(amount, due date, buyer, docs CID + hash)
-    V->>P: verifyInvoice(risk score, APR, advance rate)
+    V->>P: verifyInvoice(risk score)
+    P->>P: Rust risk engine (Stylus) sets APR + advance
     P-->>E: soulbound invoice NFT (trade record)
     I->>P: invest(USDG)
     P-->>E: advance paid automatically when fully funded (minus 1% to the reserve)
@@ -86,13 +87,16 @@ sequenceDiagram
 | Robinhood Chain testnet (46630) | [`0xA7fC55ca10c05aA2a0e0Cef5e00f15B08Caf4a99`](https://explorer.testnet.chain.robinhood.com/address/0xA7fC55ca10c05aA2a0e0Cef5e00f15B08Caf4a99) | [`0x7c2e27323578C67B4c2E847024D80091586503d6`](https://explorer.testnet.chain.robinhood.com/address/0x7c2e27323578C67B4c2E847024D80091586503d6) | Paxos USDG |
 | Arbitrum Sepolia (421614) | [`0x0D0C0eE2a93D4E6d912da43810Ca8f327BDc7341`](https://arbitrum-sepolia.blockscout.com/address/0x0D0C0eE2a93D4E6d912da43810Ca8f327BDc7341) | [`0xc9A10EDA07ea8D90dB95254540efb7F00907f888`](https://arbitrum-sepolia.blockscout.com/address/0xc9A10EDA07ea8D90dB95254540efb7F00907f888) | Paxos USDG, Circle USDC |
 
-All contracts are source-verified on Blockscout.
+Rust risk engine (Stylus): Robinhood Chain [`0x454aeA0eDA332a09FFc61C5799B336AEa24Cd863`](https://explorer.testnet.chain.robinhood.com/address/0x454aeA0eDA332a09FFc61C5799B336AEa24Cd863) · Arbitrum Sepolia [`0xb78d4d4FDCBd5e2E73405091138B08bd1707d551`](https://arbitrum-sepolia.blockscout.com/address/0xb78d4d4FDCBd5e2E73405091138B08bd1707d551)
+
+The Solidity contracts are source-verified on Blockscout.
 
 ## Architecture
 
 | Part | What it is |
 |---|---|
 | [`contracts/`](contracts/) | Foundry project. `EarnXProtocol` (lifecycle, pricing, reserve) and `EarnXInvoiceNFT` (ERC-5192 soulbound records with on-chain SVG metadata). OpenZeppelin 5.7: AccessControl, SafeERC20, ReentrancyGuard, Pausable, EIP-712, Nonces. 29 tests including fuzz tests; CI on every push. |
+| [`contracts/stylus/risk-engine`](contracts/stylus/risk-engine) | **Rust risk engine on Arbitrum Stylus.** Prices every invoice on-chain from a published formula: APR = 8% + 0.15% per risk point + term and size premiums; advance = 90%, reduced for higher risk and long terms. No storage, no owner; 4.3 KB of WASM with Rust unit tests. |
 | [`app/`](app/) | Vite + React + TypeScript, wagmi + RainbowKit for wallets, ZeroDev Kernel v3.1 for passkey accounts with sponsored gas, Tailwind. ABIs and addresses are generated from `contracts/` so the app cannot drift from the chain. |
 | [`app/api/upload`](app/api/upload.ts) | Serverless function that pins documents to IPFS through Pinata and returns the manifest CID and hash. The Pinata key never reaches the browser. |
 | [`app/api/verify`](app/api/verify.ts) | Automated pre-screen for the testnet: re-fetches the documents from IPFS, checks them against the on-chain hash, applies published rules, and verifies or rejects the invoice with a key that holds `VERIFIER_ROLE` and nothing else. |
@@ -106,6 +110,7 @@ Everything before the buildathon is tagged [`pre-buildathon`](https://github.com
 During the buildathon we:
 - rewrote the contracts from scratch: the previous contract accepted deposits but had no payout, repayment or claim path, and approved every invoice automatically;
 - added the first-loss reserve, EIP-712 verifier signatures bound to document hashes, and soulbound trade records;
+- wrote a risk engine in Rust on Arbitrum Stylus that prices every new invoice on-chain, and plugged it into the protocol on both chains;
 - wrote the test suite and CI, then deployed and verified on Robinhood Chain testnet and Arbitrum Sepolia with Paxos USDG;
 - rebuilt the app around live on-chain data (the old one showed hardcoded figures), added passkey accounts with sponsored gas, IPFS uploads and the automated verifier;
 - removed hardcoded credentials and the unused Morph/Mantle-era code.
