@@ -68,3 +68,9 @@ earnx-verification-api/.env
 .node_modules
 
 .vercel
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/31337/
+contracts/broadcast/**/dry-run/
