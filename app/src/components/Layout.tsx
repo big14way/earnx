@@ -109,7 +109,8 @@ export function Layout() {
             </p>
           </div>
           <div className="flex flex-col gap-1.5">
-            <div className="font-semibold text-ink">Source</div>
+            <div className="font-semibold text-ink">Learn and verify</div>
+            <Link className="hover:text-ink" to="/how-it-works">How it works and contracts</Link>
             <a className="hover:text-ink" href="https://github.com/big14way/earnx" target="_blank" rel="noreferrer">
               GitHub
             </a>
@@ -119,9 +120,16 @@ export function Layout() {
               target="_blank"
               rel="noreferrer"
             >
-              Contracts and deployments
+              Contracts and tests
+            </a>
+            <a className="hover:text-ink" href="https://github.com/big14way/earnx/tree/main/contracts/stylus/risk-engine" target="_blank" rel="noreferrer">
+              Rust risk engine
             </a>
           </div>
+        </div>
+        <div className="mx-auto max-w-6xl border-t border-line px-4 py-5 text-xs text-muted sm:px-6">
+          Built by Godswill Idolor for the Arbitrum Open House Singapore buildathon. Not investment advice; testnet
+          tokens have no value.
         </div>
       </footer>
     </div>

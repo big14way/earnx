@@ -1,3 +1,4 @@
+import { useTitle } from '../hooks/useTitle';
 import { Link } from 'react-router';
 import { useReadContracts } from 'wagmi';
 import type { Address } from 'viem';
@@ -12,6 +13,7 @@ import type { Invoice } from '../lib/invoice';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export function Portfolio() {
+  useTitle('Your portfolio');
   const { address } = useAccountSession();
   if (!address) {
     return (

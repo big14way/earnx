@@ -1,3 +1,4 @@
+import { useTitle } from '../hooks/useTitle';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -14,6 +15,8 @@ import { useInvoices } from '../hooks/useInvoices';
 import { chainMeta, contractsFor, explorerUrl, tokensFor } from '../lib/chains';
 import { passkeysEnabled } from '../lib/passkeyConfig';
 import { percentFromBps } from '../lib/format';
+import { benchmarkFor, compareToMarket } from '../lib/market';
+import { useNaira } from '../hooks/useFx';
 
 const AFRICAN_COUNTRIES = [
   'Nigeria', 'Ghana', 'Kenya', "Cote d'Ivoire", 'South Africa', 'Ethiopia', 'Tanzania', 'Uganda', 'Rwanda',
@@ -29,6 +32,7 @@ type Verdict =
 type Check = { ok: boolean; label: string };
 
 export function Exporters() {
+  useTitle('Get paid early');
   const { address, chainId } = useAccountSession();
   const { invoices } = useInvoices(chainId);
   const mine = address ? invoices.filter((i) => i.supplier.toLowerCase() === address.toLowerCase()) : [];
@@ -121,6 +125,17 @@ function SubmitForm() {
   const { address, chainId, kind } = useAccountSession();
   const tokens = tokensFor(chainId);
   const tx = useEarnXWrite();
+  const naira = useNaira();
+  const [commodity, setCommodity] = useState('');
+  const [origin, setOrigin] = useState('Nigeria');
+  const [quantity, setQuantity] = useState('');
+  const [unitPrice, setUnitPrice] = useState('');
+  const [amount, setAmount] = useState('');
+  const total = Number(quantity) * Number(unitPrice);
+  const benchmark = benchmarkFor(commodity, origin);
+  const market = benchmark && Number(quantity) > 0 && Number(unitPrice) > 0
+    ? compareToMarket({ quantity: Number(quantity), unit: 't', unitPriceUsd: Number(unitPrice) }, benchmark)
+    : undefined;
   const [step, setStep] = useState<'form' | 'uploading' | 'submitting' | 'verifying' | 'done'>('form');
   const [error, setError] = useState('');
   const [verdict, setVerdict] = useState<Verdict>();
@@ -139,6 +154,8 @@ function SubmitForm() {
       setStep('uploading');
       const upload = new FormData();
       files.forEach((f) => upload.append('files', f));
+      for (const k of ['quantity', 'unitPrice', 'incoterms'] as const) upload.append(k, String(form.get(k) ?? ''));
+      upload.append('unit', 't');
       const res = await fetch('/api/upload', { method: 'POST', body: upload });
       const docs = (await res.json()) as { cid?: string; docsHash?: Hex; error?: string };
       if (!res.ok || !docs.cid || !docs.docsHash) throw new Error(docs.error ?? 'Upload failed.');
@@ -198,10 +215,10 @@ function SubmitForm() {
     <Card className="p-6 sm:p-8">
       <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
         <Field label="What did you ship?" className="sm:col-span-2">
-          <input name="commodity" required maxLength={60} placeholder="e.g. Shea butter, 12 tonnes" className={inputCls} />
+          <input name="commodity" required maxLength={60} placeholder="e.g. Cocoa beans" value={commodity} onChange={(e) => setCommodity(e.target.value)} className={inputCls} />
         </Field>
         <Field label="From">
-          <select name="origin" required className={inputCls} defaultValue="Nigeria">
+          <select name="origin" required className={inputCls} value={origin} onChange={(e) => setOrigin(e.target.value)}>
             {AFRICAN_COUNTRIES.map((c) => <option key={c}>{c}</option>)}
           </select>
         </Field>
@@ -211,15 +228,36 @@ function SubmitForm() {
         <Field label="Buyer" className="sm:col-span-2">
           <input name="buyer" required maxLength={80} placeholder="Company name and city" className={inputCls} />
         </Field>
+        <Field label="Quantity (tonnes)">
+          <input name="quantity" inputMode="decimal" placeholder="16" value={quantity}
+            onChange={(e) => { setQuantity(e.target.value); const t = Number(e.target.value) * Number(unitPrice); if (t > 0) setAmount(String(Math.round(t * 100) / 100)); }}
+            className={inputCls} />
+        </Field>
+        <Field label="Price per tonne (USD)">
+          <input name="unitPrice" inputMode="decimal" placeholder="5800" value={unitPrice}
+            onChange={(e) => { setUnitPrice(e.target.value); const t = Number(quantity) * Number(e.target.value); if (t > 0) setAmount(String(Math.round(t * 100) / 100)); }}
+            className={inputCls} />
+        </Field>
+        {(market || (benchmark === undefined && commodity.length > 3 && total > 0)) && (
+          <div className={`sm:col-span-2 rounded-2xl px-4 py-3 text-sm ${market?.level === 'far-above' ? 'bg-clay-soft text-clay' : market?.level === 'in-line' ? 'bg-leaf-soft text-ink' : 'bg-gold-soft text-ink'}`}>
+            {market && benchmark
+              ? <>Market check: <b>{market.label}</b> · World Bank {benchmark.name}, {benchmark.month.replace('M', '-')}: ${benchmark.usdPerTonne.toLocaleString('en-US')}/t</>
+              : <>No public benchmark for this commodity yet; the verifier will rely on the documents.</>}
+          </div>
+        )}
         <Field label="Invoice amount">
-          <input name="amount" required inputMode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="25000" className={inputCls} />
+          <input name="amount" required inputMode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="25000" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls} />
+          {Number(amount) > 0 && <span className="mt-1 block text-xs text-muted">{naira(Number(amount))}</span>}
         </Field>
         <Field label="Paid out in">
           <select name="token" className={inputCls}>
             {tokens.map((t) => <option key={t.address} value={t.address}>{t.symbol}</option>)}
           </select>
         </Field>
-        <Field label="Buyer pays by" className="sm:col-span-2">
+        <Field label="Incoterms (optional)">
+          <input name="incoterms" maxLength={40} placeholder="FOB Tema" className={inputCls} />
+        </Field>
+        <Field label="Buyer pays by">
           <input name="due" type="date" required min={minDate} max={maxDate} className={inputCls} />
         </Field>
         <Field label="Invoice and shipping documents (PDF or photos, up to 4 MB)" className="sm:col-span-2">
