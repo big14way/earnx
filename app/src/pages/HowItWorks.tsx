@@ -1,3 +1,4 @@
+import { useTitle } from '../hooks/useTitle';
 import { Card, SectionTitle } from '../components/ui';
 import { contractsFor, explorerUrl, supportedChains, chainMeta, tokensFor } from '../lib/chains';
 
@@ -11,6 +12,7 @@ const FAQ: [string, string][] = [
 ];
 
 export function HowItWorks() {
+  useTitle('How it works');
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       <SectionTitle eyebrow="How it works" title="The whole lifecycle is enforced by the contract.">

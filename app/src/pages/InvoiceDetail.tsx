@@ -5,12 +5,17 @@ import { erc20Abi, parseUnits } from 'viem';
 import { protocolAbi } from '../abi/earnx';
 import { DocumentCheck } from '../components/DocumentCheck';
 import { NftPreview } from '../components/NftPreview';
+import { ActivityCard, DealOverview, ExporterCard, MarketCheckCard, PricingCard, RepaymentTerms, RiskCard, Section } from '../components/InvoiceSections';
+import { useActivity } from '../hooks/useActivity';
+import { useNaira } from '../hooks/useFx';
+import { useTitle } from '../hooks/useTitle';
+import { useInvoices } from '../hooks/useInvoices';
 import { Button, Card, ProgressBar, Skeleton, StatusBadge, TxStatus } from '../components/ui';
 import { useAccountSession } from '../hooks/useAccountSession';
 import { protocolCall, useEarnXWrite } from '../hooks/useEarnXWrite';
 import { useInvoice, usePosition } from '../hooks/useInvoices';
-import { chainMeta, contractsFor, explorerUrl, isSupportedChain, tokenInfo, type SupportedChainId } from '../lib/chains';
-import { countryFlag, date, money, percentFromBps, relativeDays, shortAddress } from '../lib/format';
+import { chainMeta, contractsFor, isSupportedChain, tokenInfo, type SupportedChainId } from '../lib/chains';
+import { countryFlag, date, money, percentFromBps, relativeDays } from '../lib/format';
 import { expectedReturn, isSample, progress, tenorDays, type Invoice } from '../lib/invoice';
 
 export function InvoiceDetail() {
@@ -22,8 +27,24 @@ export function InvoiceDetail() {
   return <InvoiceView chainId={chainId} id={BigInt(params.id!)} />;
 }
 
+const SECTIONS = [
+  ['overview', 'Overview'],
+  ['pricing', 'Pricing'],
+  ['market', 'Market check'],
+  ['documents', 'Documents'],
+  ['repayment', 'Repayment'],
+  ['risk', 'Risk'],
+  ['activity', 'Activity'],
+] as const;
+
 function InvoiceView({ chainId, id }: { chainId: SupportedChainId; id: bigint }) {
   const { invoice, isLoading } = useInvoice(chainId, id);
+  const naira = useNaira();
+  const book = useInvoices(chainId);
+  const activity = useActivity(chainId, (i) => book.invoices.find((x) => x.id === i)?.token);
+  const verifiedAt = activity.data?.find((a) => a.invoiceId === id && a.title.endsWith('verified'))?.when;
+  const { data: grace } = useReadContract({ address: contractsFor(chainId).protocol, abi: protocolAbi, functionName: 'gracePeriod', chainId });
+  useTitle(invoice ? `#${id} ${invoice.commodity}` : `Invoice #${id}`);
   if (isLoading) return <div className="mx-auto max-w-6xl px-6 py-12"><Skeleton className="h-96" /></div>;
   if (!invoice) return <p className="mx-auto max-w-6xl px-6 py-20 text-muted">Invoice #{id.toString()} was not found.</p>;
   const token = tokenInfo(invoice.token);
@@ -46,15 +67,23 @@ function InvoiceView({ chainId, id }: { chainId: SupportedChainId; id: bigint })
         <StatusBadge status={invoice.status} />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <nav className="sticky top-[65px] z-20 -mx-4 mt-6 overflow-x-auto border-b border-line bg-paper/90 px-4 backdrop-blur sm:mx-0 sm:rounded-full sm:border sm:px-2">
+        <div className="flex gap-1 py-2 text-sm font-medium">
+          {SECTIONS.map(([sid, label]) => (
+            <a key={sid} href={`#${sid}`} className="whitespace-nowrap rounded-full px-3 py-1.5 text-ink-soft hover:bg-line/60 hover:text-ink">{label}</a>
+          ))}
+        </div>
+      </nav>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6">
           <Card className="p-6">
             <dl className="tabular grid grid-cols-2 gap-5 sm:grid-cols-3">
-              <Term label="Invoice value" value={`${money(invoice.faceValue, token.decimals)} ${token.symbol}`} />
+              <Term label="Invoice value" value={`${money(invoice.faceValue, token.decimals)} ${token.symbol}`} sub={naira(Number(invoice.faceValue) / 10 ** token.decimals)} />
               <Term label="Investors earn" value={invoice.aprBps ? `${percentFromBps(invoice.aprBps)} APR` : 'After review'} accent />
               <Term label="Term" value={`${tenorDays(invoice)} days`} />
               <Term label="Advanced to exporter" value={invoice.advanceBps ? percentFromBps(invoice.advanceBps, 0) : '—'} />
-              <Term label="Funding target" value={invoice.fundingTarget ? `${money(invoice.fundingTarget, token.decimals)} ${token.symbol}` : '—'} />
+              <Term label="Funding target" value={invoice.fundingTarget ? `${money(invoice.fundingTarget, token.decimals)} ${token.symbol}` : '—'} sub={invoice.fundingTarget ? naira(Number(invoice.fundingTarget) / 10 ** token.decimals) : undefined} />
               <Term label="Buyer pays by" value={date(invoice.dueDate)} />
             </dl>
             {invoice.status !== 'Submitted' && invoice.status !== 'Rejected' && (
@@ -69,41 +98,26 @@ function InvoiceView({ chainId, id }: { chainId: SupportedChainId; id: bigint })
               </div>
             )}
             {invoice.riskScore > 0 && <RiskBar score={invoice.riskScore} />}
-            {invoice.riskScore > 0 && pricedByEngine(chainId, invoice.id) && (
-              <p className="mt-3 text-xs text-muted">
-                APR and advance computed on-chain by the{' '}
-                <a className="font-semibold text-leaf underline" href={explorerUrl(chainId, 'address', contractsFor(chainId).riskEngine!)} target="_blank" rel="noreferrer">
-                  Rust risk engine (Stylus)
-                </a>{' '}
-                from a published formula.
-              </p>
-            )}
           </Card>
 
-          <Card className="p-6">
-            <h2 className="font-semibold text-ink">Timeline</h2>
+          <DealOverview invoice={invoice} verifiedAt={verifiedAt} />
+          <PricingCard invoice={invoice} verifiedAt={verifiedAt} />
+          <MarketCheckCard invoice={invoice} />
+          <Section id="timeline" title="Timeline">
             <Timeline invoice={invoice} />
-          </Card>
-
-          <Card className="p-6">
-            <h2 className="font-semibold text-ink">Documents</h2>
-            <p className="mt-1 text-sm text-muted">
+          </Section>
+          <Section id="documents" title="Documents">
+            <p className="text-sm text-muted">
               The verifier reviewed the documents with this fingerprint. Anyone can check the file still matches it.
             </p>
             <div className="mt-4">
               <DocumentCheck docsHash={invoice.docsHash} docsCID={invoice.docsCID} />
             </div>
-          </Card>
-
-          <Card className="p-6">
-            <h2 className="font-semibold text-ink">Parties and contracts</h2>
-            <dl className="mt-4 space-y-3 text-sm">
-              <Row label="Exporter"><AddressLink chainId={chainId} address={invoice.supplier} /></Row>
-              <Row label="Buyer">{invoice.buyer}</Row>
-              <Row label="Settlement">{token.name} ({token.symbol})</Row>
-              <Row label="Protocol contract"><AddressLink chainId={chainId} address={contractsFor(chainId).protocol} /></Row>
-            </dl>
-          </Card>
+          </Section>
+          <RepaymentTerms invoice={invoice} grace={grace !== undefined ? Number(grace) : undefined} />
+          <RiskCard invoice={invoice} />
+          <ExporterCard invoice={invoice} />
+          <ActivityCard invoice={invoice} />
         </div>
 
         <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
@@ -366,11 +380,12 @@ function RiskBar({ score }: { score: number }) {
   );
 }
 
-function Term({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Term({ label, value, accent, sub }: { label: string; value: string; accent?: boolean; sub?: string }) {
   return (
     <div>
       <dt className="text-xs text-muted">{label}</dt>
       <dd className={`mt-0.5 font-semibold ${accent ? 'text-leaf' : 'text-ink'}`}>{value}</dd>
+      {sub && <dd className="text-xs text-muted">{sub}</dd>}
     </div>
   );
 }
@@ -384,15 +399,3 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function AddressLink({ chainId, address }: { chainId: number; address: string }) {
-  return (
-    <a className="font-mono text-leaf underline" href={explorerUrl(chainId, 'address', address)} target="_blank" rel="noreferrer">
-      {shortAddress(address)}
-    </a>
-  );
-}
-
-function pricedByEngine(chainId: SupportedChainId, id: bigint) {
-  const { riskEngine, riskEngineSinceInvoice } = contractsFor(chainId);
-  return Boolean(riskEngine && riskEngineSinceInvoice !== undefined && id >= riskEngineSinceInvoice);
-}

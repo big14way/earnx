@@ -1,3 +1,4 @@
+import { useTitle } from '../hooks/useTitle';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { Globe } from '../components/Globe';
@@ -17,12 +18,13 @@ import { money, plural } from '../lib/format';
 const usd = (n: number) => `$${n.toLocaleString('en-US', { maximumFractionDigits: n < 100 ? 2 : 0 })}`;
 
 export function Home() {
+  useTitle('');
   const { chainId } = useAccountSession();
   const { invoices, isLoading } = useInvoices(chainId);
   const all = useAllInvoices();
   const stats = useProtocolStats(chainId);
   const open = invoices.filter((i) => i.status === 'Funding');
-  const featured = open[0] ?? invoices[0];
+  const featured = [...open].sort((a, b) => Number(b.funded - a.funded) || b.submittedAt - a.submittedAt)[0] ?? invoices[0];
   const repaid = invoices.find((i) => i.status === 'Repaid');
 
   return (
@@ -32,34 +34,19 @@ export function Home() {
         <HeroBackground />
         <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 pb-24 pt-14 sm:px-6 md:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div className="min-w-0">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-paper/80"
-            >
+            <div className="rise inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-paper/80">
               <span className="h-2 w-2 rounded-full bg-lime shadow-[0_0_12px_#c8f169]" />
               Live on {chainMeta[chainId].short} testnet · settled in USDG
-            </motion.div>
+            </div>
             <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.02] tracking-tight sm:text-6xl lg:text-[4.6rem]">
               <WordReveal text="Get paid when you ship," delay={0.1} />{' '}
               <WordReveal text="not when your buyer pays." delay={0.45} className="text-lime" />
             </h1>
-            <motion.p
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.9 }}
-              className="mt-6 max-w-xl text-lg leading-relaxed text-paper/75"
-            >
+            <p className="rise mt-6 max-w-xl text-lg leading-relaxed text-paper/75" style={{ animationDelay: '0.9s' }}>
               EarnX turns a verified export invoice into cash for an African exporter today. Investors anywhere fund it in
               USDG and earn the yield when the buyer pays.
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.05 }}
-              className="mt-8 flex flex-wrap gap-3"
-            >
+            </p>
+            <div className="rise mt-8 flex flex-wrap gap-3" style={{ animationDelay: '1.05s' }}>
               <Link
                 to="/invest"
                 className="group inline-flex items-center gap-2 rounded-full bg-lime px-6 py-3 text-sm font-semibold text-ink shadow-[0_10px_40px_-10px_rgba(200,241,105,0.7)] transition hover:-translate-y-0.5"
@@ -72,18 +59,13 @@ export function Home() {
               >
                 I'm an exporter
               </Link>
-            </motion.div>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3, duration: 0.8 }} className="mt-10 max-w-md">
+            </div>
+            <div className="rise mt-10 max-w-md" style={{ animationDelay: '1.3s' }}>
               <LiveTicker invoices={all.invoices} />
-            </motion.div>
+            </div>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mx-auto w-full max-w-[560px]"
-          >
+          <div className="zoom-in relative mx-auto w-full max-w-[560px]" style={{ animationDelay: '0.2s' }}>
             <div className="absolute inset-[12%] rounded-full bg-[#2f8f5f]/30 blur-3xl" />
             <Globe invoices={all.invoices} />
             {featured && (
@@ -97,7 +79,7 @@ export function Home() {
               <div className="flex items-center gap-2"><span className="h-1.5 w-4 rounded-full bg-lime" /> funded / repaid</div>
               <div className="mt-1 flex items-center gap-2"><span className="h-1.5 w-4 rounded-full bg-[#f5bd4a]" /> raising now</div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 

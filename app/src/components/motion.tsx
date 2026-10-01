@@ -47,15 +47,11 @@ export function WordReveal({ text, className = '', delay = 0 }: { text: string; 
     <span className={className} aria-label={text}>
       {words.map((w, i) => (
         <span key={i} className="inline-block overflow-hidden pb-[0.08em] align-bottom" aria-hidden>
-          <motion.span
-            className="inline-block"
-            initial={{ y: '110%' }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.8, delay: delay + i * 0.06, ease: EASE }}
-          >
+          {/* CSS animation, not JS: the headline must appear even in a background tab or before JS paints. */}
+          <span className="word-up inline-block" style={{ animationDelay: `${delay + i * 0.06}s` }}>
             {w}
             {i < words.length - 1 ? ' ' : ''}
-          </motion.span>
+          </span>
         </span>
       ))}
     </span>

@@ -15,8 +15,10 @@ export function plural(n: bigint | number, word: string) {
   return `${n} ${word}${Number(n) === 1 ? '' : 's'}`;
 }
 
-export function percentFromBps(bps: number, digits = 1) {
-  return `${(bps / 100).toFixed(digits)}%`;
+export function percentFromBps(bps: number, digits?: number) {
+  // 1235 -> "12.35%", 1200 -> "12.0%": two decimals only when they carry information.
+  const d = digits ?? (bps % 10 === 0 ? 1 : 2);
+  return `${(bps / 100).toFixed(d)}%`;
 }
 
 export function shortAddress(address?: Address | string) {
@@ -56,6 +58,13 @@ export function countryFlag(country: string) {
     egypt: 'EG',
     morocco: 'MA',
     netherlands: 'NL',
+    belgium: 'BE',
+    zambia: 'ZM',
+    malawi: 'MW',
+    'burkina faso': 'BF',
+    mali: 'ML',
+    benin: 'BJ',
+    togo: 'TG',
     vietnam: 'VN',
     japan: 'JP',
     'united arab emirates': 'AE',

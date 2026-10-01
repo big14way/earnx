@@ -28,6 +28,13 @@ export async function POST(request: Request) {
   const bad = files.find((f) => !ALLOWED.includes(f.type));
   if (bad) return Response.json({ error: `${bad.name}: only PDF, PNG, JPG or WEBP files are accepted.` }, { status: 400 });
 
+  // Optional trade details. They are part of the manifest, so they are covered by the on-chain hash.
+  const quantity = Number(form.get('quantity'));
+  const unitPriceUsd = Number(form.get('unitPrice'));
+  const unit = form.get('unit') === 'kg' ? 'kg' : 't';
+  const incoterms = String(form.get('incoterms') ?? '').slice(0, 40) || undefined;
+  const trade = quantity > 0 && unitPriceUsd > 0 ? { quantity, unit, unitPriceUsd, incoterms } : undefined;
+
   try {
     const entries = [];
     for (const file of files) {
@@ -35,9 +42,9 @@ export async function POST(request: Request) {
       const cid = await pin(jwt, new Blob([bytes], { type: file.type }), file.name);
       entries.push({ name: file.name, type: file.type, size: file.size, cid, keccak256: keccak256(bytes) });
     }
-    const manifest = JSON.stringify({ app: 'EarnX', version: 1, createdAt: new Date().toISOString(), files: entries }, null, 2);
+    const manifest = JSON.stringify({ app: 'EarnX', version: 1, createdAt: new Date().toISOString(), trade, files: entries }, null, 2);
     const cid = await pin(jwt, new Blob([manifest], { type: 'application/json' }), 'earnx-documents.json');
-    return Response.json({ cid, docsHash: keccak256(toBytes(manifest)), files: entries });
+    return Response.json({ cid, docsHash: keccak256(toBytes(manifest)), files: entries, trade });
   } catch (e) {
     return Response.json({ error: `IPFS upload failed: ${(e as Error).message}` }, { status: 502 });
   }

@@ -3,14 +3,16 @@ import { chainMeta, tokenInfo } from '../lib/chains';
 import { countryFlag, money, percentFromBps, relativeDays } from '../lib/format';
 import { isSample, progress, tenorDays, type Invoice } from '../lib/invoice';
 import { ProgressBar, StatusBadge } from './ui';
+import { useNaira } from '../hooks/useFx';
 
 export function InvoiceCard({ invoice }: { invoice: Invoice }) {
   const token = tokenInfo(invoice.token);
   const pct = progress(invoice);
+  const naira = useNaira();
   return (
     <Link
       to={`/invoice/${invoice.chainId}/${invoice.id}`}
-      className="group flex flex-col rounded-3xl border border-line bg-card p-5 transition hover:-translate-y-0.5 hover:border-ink hover:shadow-[0_12px_30px_-18px_rgba(16,35,26,0.5)]"
+      className="group flex flex-col rounded-3xl border border-line bg-card p-5 text-ink transition hover:-translate-y-0.5 hover:border-ink hover:shadow-[0_12px_30px_-18px_rgba(16,35,26,0.5)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -32,6 +34,7 @@ export function InvoiceCard({ invoice }: { invoice: Invoice }) {
           <dd className="font-semibold">
             {money(invoice.faceValue, token.decimals, { compact: true })} {token.symbol}
           </dd>
+          <dd className="text-[11px] text-muted">{naira(Number(invoice.faceValue) / 10 ** token.decimals)}</dd>
         </div>
         <div>
           <dt className="text-xs text-muted">Yield (APR)</dt>
