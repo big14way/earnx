@@ -9,6 +9,7 @@ import './index.css';
 import { wagmiConfig } from './lib/wagmi';
 import { AccountProvider } from './hooks/useAccountSession';
 import { Layout } from './components/Layout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Home } from './pages/Home';
 import { Invest } from './pages/Invest';
 import { InvoiceDetail } from './pages/InvoiceDetail';
@@ -20,6 +21,7 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <ErrorBoundary>
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={lightTheme({ accentColor: '#10231a', borderRadius: 'large' })}>
@@ -49,5 +51,6 @@ createRoot(document.getElementById('root')!).render(
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );
