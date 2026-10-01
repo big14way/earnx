@@ -1,0 +1,23 @@
+{
+  "sample": true,
+  "note": "Fictional sample data for the EarnX testnet demo. Not a real company, shipment or invoice.",
+  "invoiceNumber": "NG-EXP-2026-0098",
+  "commodity": "Hulled sesame seeds",
+  "quantity": "12 t",
+  "unitPrice": "USD 1,750/t",
+  "totalAmount": 21000,
+  "currency": "USD (settled in USDG/USDC)",
+  "exporter": "Sample exporter (EarnX demo wallet)",
+  "buyer": "Sample buyer: food importer, Osaka",
+  "origin": "Nigeria",
+  "destination": "Japan",
+  "incoterms": "FOB Lagos (Apapa)",
+  "paymentTerms": "Net 45 days",
+  "portOfLoading": "Lagos",
+  "documents": [
+    "Commercial invoice",
+    "Bill of lading / waybill",
+    "Certificate of origin",
+    "Phytosanitary certificate"
+  ]
+}

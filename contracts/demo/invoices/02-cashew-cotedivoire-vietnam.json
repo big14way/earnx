@@ -1,0 +1,23 @@
+{
+  "sample": true,
+  "note": "Fictional sample data for the EarnX testnet demo. Not a real company, shipment or invoice.",
+  "invoiceNumber": "CI-EXP-2026-0187",
+  "commodity": "Raw cashew nuts",
+  "quantity": "25 t",
+  "unitPrice": "USD 1,300/t",
+  "totalAmount": 32500,
+  "currency": "USD (settled in USDG/USDC)",
+  "exporter": "Sample exporter (EarnX demo wallet)",
+  "buyer": "Sample buyer: cashew processor, Ho Chi Minh City",
+  "origin": "Cote d'Ivoire",
+  "destination": "Vietnam",
+  "incoterms": "FOB Abidjan",
+  "paymentTerms": "Net 60 days",
+  "portOfLoading": "Abidjan",
+  "documents": [
+    "Commercial invoice",
+    "Bill of lading / waybill",
+    "Certificate of origin",
+    "Phytosanitary certificate"
+  ]
+}

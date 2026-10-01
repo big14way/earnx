@@ -1,0 +1,23 @@
+{
+  "sample": true,
+  "note": "Fictional sample data for the EarnX testnet demo. Not a real company, shipment or invoice.",
+  "invoiceNumber": "GH-EXP-2026-0412",
+  "commodity": "Cocoa beans",
+  "quantity": "16 t",
+  "unitPrice": "USD 3,000/t",
+  "totalAmount": 48000,
+  "currency": "USD (settled in USDG/USDC)",
+  "exporter": "Sample exporter (EarnX demo wallet)",
+  "buyer": "Sample buyer: cocoa processor, Amsterdam",
+  "origin": "Ghana",
+  "destination": "Netherlands",
+  "incoterms": "FOB Tema",
+  "paymentTerms": "Net 75 days",
+  "portOfLoading": "Tema",
+  "documents": [
+    "Commercial invoice",
+    "Bill of lading / waybill",
+    "Certificate of origin",
+    "Phytosanitary certificate"
+  ]
+}
