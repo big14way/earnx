@@ -154,7 +154,18 @@ export function Home() {
           <div className="relative mx-auto grid max-w-6xl gap-12 px-4 py-24 sm:px-6 md:grid-cols-[0.9fr_1.1fr] md:items-center">
             {founderStory.photo && (
               <Reveal>
-                <img src={founderStory.photo.src} alt={founderStory.photo.alt} className="w-full rounded-3xl object-cover" />
+                <figure className="relative">
+                  <div className="absolute -inset-4 -z-10 rounded-[2.5rem] bg-[radial-gradient(circle_at_40%_30%,rgba(200,241,105,0.35),transparent_65%)] blur-2xl" />
+                  <img
+                    src={founderStory.photo.src}
+                    alt={founderStory.photo.alt}
+                    loading="lazy"
+                    className="aspect-[4/5] w-full rounded-3xl object-cover shadow-2xl"
+                  />
+                  {founderStory.photo.caption && (
+                    <figcaption className="mt-3 text-center text-sm italic text-paper/60">{founderStory.photo.caption}</figcaption>
+                  )}
+                </figure>
               </Reveal>
             )}
             <Reveal delay={0.1} className={founderStory.photo ? '' : 'md:col-span-2 md:max-w-3xl'}>
