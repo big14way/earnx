@@ -34,6 +34,8 @@ export async function POST(request: Request) {
   const unit = form.get('unit') === 'kg' ? 'kg' : 't';
   const incoterms = String(form.get('incoterms') ?? '').slice(0, 40) || undefined;
   const trade = quantity > 0 && unitPriceUsd > 0 ? { quantity, unit, unitPriceUsd, incoterms } : undefined;
+  // The exporter's own invoice number: with the buyer, it is how a second financing of the same invoice is caught.
+  const invoiceNumber = String(form.get('invoiceNumber') ?? '').trim().slice(0, 40) || undefined;
 
   try {
     const entries = [];
@@ -42,9 +44,9 @@ export async function POST(request: Request) {
       const cid = await pin(jwt, new Blob([bytes], { type: file.type }), file.name);
       entries.push({ name: file.name, type: file.type, size: file.size, cid, keccak256: keccak256(bytes) });
     }
-    const manifest = JSON.stringify({ app: 'EarnX', version: 1, createdAt: new Date().toISOString(), trade, files: entries }, null, 2);
+    const manifest = JSON.stringify({ app: 'EarnX', version: 1, createdAt: new Date().toISOString(), invoiceNumber, trade, files: entries }, null, 2);
     const cid = await pin(jwt, new Blob([manifest], { type: 'application/json' }), 'earnx-documents.json');
-    return Response.json({ cid, docsHash: keccak256(toBytes(manifest)), files: entries, trade });
+    return Response.json({ cid, docsHash: keccak256(toBytes(manifest)), files: entries, invoiceNumber, trade });
   } catch (e) {
     return Response.json({ error: `IPFS upload failed: ${(e as Error).message}` }, { status: 502 });
   }
