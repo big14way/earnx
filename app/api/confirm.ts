@@ -1,7 +1,8 @@
-import { createPublicClient, erc20Abi, http, isAddress, isHex, type Address, type Hex } from 'viem';
+import { createPublicClient, erc20Abi, isAddress, isHex, type Address, type Hex } from 'viem';
 import { arbitrumSepolia, robinhoodTestnet } from 'viem/chains';
 import { deployments, protocolAbi } from '../src/abi/earnx.js';
 import { findPins, pinJson } from '../src/lib/pinata.js';
+import { serverTransport } from '../src/lib/serverRpc.js';
 import { buyerStatement, invoiceKey, type BuyerConfirmation } from '../src/lib/trust.js';
 
 /**
@@ -33,9 +34,11 @@ export async function GET(request: Request) {
     return Response.json({ confirmations }, { headers });
   }
   if (!/^\d+$/.test(invoiceId)) return Response.json({ error: 'Bad invoice id.' }, { status: 400 });
-  const facts = await loadFacts(chain, BigInt(invoiceId));
+  const [facts, [pin]] = await Promise.all([
+    loadFacts(chain, BigInt(invoiceId)),
+    findPins(jwt, { earnx: 'buyer-confirmation', invoice: invoiceKey(chain.id, invoiceId) }, 1),
+  ]);
   if (!facts) return Response.json({ error: 'Invoice not found.' }, { status: 404 });
-  const [pin] = await findPins(jwt, { earnx: 'buyer-confirmation', invoice: invoiceKey(chain.id, invoiceId) }, 1);
   return Response.json({ statement: facts.statement, status: facts.status, confirmation: pin ? fromPin(chain.id, pin) : null });
 }
 
@@ -50,7 +53,11 @@ export async function POST(request: Request) {
   if (!chain || !/^\d+$/.test(body.invoiceId ?? '') || !isAddress(body.signer ?? '') || !isHex(body.signature) || buyerName.length < 2) {
     return Response.json({ error: 'Send { chainId, invoiceId, buyerName, signer, signature }.' }, { status: 400 });
   }
-  const facts = await loadFacts(chain, BigInt(body.invoiceId!));
+  const key = invoiceKey(chain.id, body.invoiceId!);
+  const [facts, [existing]] = await Promise.all([
+    loadFacts(chain, BigInt(body.invoiceId!)),
+    findPins(jwt, { earnx: 'buyer-confirmation', invoice: key }, 1),
+  ]);
   if (!facts) return Response.json({ error: 'Invoice not found.' }, { status: 404 });
   if (!OPEN.includes(facts.status)) return Response.json({ error: 'This invoice is no longer open.' }, { status: 409 });
   if (facts.buyer.startsWith('Sample buyer')) return Response.json({ error: 'Sample invoices have a fictional buyer, so they cannot be confirmed.' }, { status: 409 });
@@ -58,8 +65,6 @@ export async function POST(request: Request) {
   if (signer.toLowerCase() === facts.supplier.toLowerCase()) {
     return Response.json({ error: "The exporter can't confirm their own invoice. The buyer signs from their own account." }, { status: 403 });
   }
-  const key = invoiceKey(chain.id, body.invoiceId!);
-  const [existing] = await findPins(jwt, { earnx: 'buyer-confirmation', invoice: key }, 1);
   if (existing) return Response.json({ error: 'The buyer has already confirmed this invoice.', confirmation: fromPin(chain.id, existing) }, { status: 409 });
 
   const valid = await facts.client.verifyMessage({ address: signer, message: facts.statement, signature: body.signature as Hex }).catch(() => false);
@@ -95,7 +100,7 @@ export async function POST(request: Request) {
 
 async function loadFacts(chain: (typeof CHAINS)[keyof typeof CHAINS], id: bigint) {
   const protocol = deployments[String(chain.id) as keyof typeof deployments].protocol as Address;
-  const client = createPublicClient({ chain, transport: http() });
+  const client = createPublicClient({ chain, transport: serverTransport(chain.id) });
   const count = await client.readContract({ address: protocol, abi: protocolAbi, functionName: 'invoiceCount' });
   if (id < 1n || id > count) return undefined;
   const inv = await client.readContract({ address: protocol, abi: protocolAbi, functionName: 'getInvoice', args: [id] });

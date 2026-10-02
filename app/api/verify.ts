@@ -1,9 +1,10 @@
-import { createPublicClient, createWalletClient, http, keccak256, type Hex } from 'viem';
+import { createPublicClient, createWalletClient, keccak256, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { arbitrumSepolia, robinhoodTestnet } from 'viem/chains';
 import { deployments, protocolAbi } from '../src/abi/earnx.js';
 import { benchmarkFor, benchmarkSource, compareToMarket, type Trade } from '../src/lib/market.js';
 import { findPins } from '../src/lib/pinata.js';
+import { serverTransport } from '../src/lib/serverRpc.js';
 import {
   AUTO_LIMIT_UNVERIFIED,
   AUTO_LIMIT_VERIFIED,
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Send { chainId, invoiceId } for a supported chain.' }, { status: 400 });
   }
   const protocol = deployments[String(chain.id) as keyof typeof deployments].protocol as Hex;
-  const publicClient = createPublicClient({ chain, transport: http() });
+  const publicClient = createPublicClient({ chain, transport: serverTransport(chain.id) });
   const id = BigInt(invoiceId);
 
   const inv = await publicClient.readContract({ address: protocol, abi: protocolAbi, functionName: 'getInvoice', args: [id] });
@@ -116,7 +117,7 @@ export async function POST(request: Request) {
   if (confirmation) checks.push({ ok: true, label: `Buyer confirmed the invoice (signed by ${short(confirmation.signer)})` });
   else if (inv.faceValue > BUYER_CONFIRMATION_ABOVE) checks.push({ ok: false, soft: true, label: `Waiting for the buyer's signed confirmation (required above ${usd(BUYER_CONFIRMATION_ABOVE)})` });
 
-  const wallet = createWalletClient({ chain, transport: http(), account: privateKeyToAccount(key) });
+  const wallet = createWalletClient({ chain, transport: serverTransport(chain.id), account: privateKeyToAccount(key) });
   const failed = checks.find((c) => !c.ok && !c.soft);
   if (failed) {
     const hash = await wallet.writeContract({ address: protocol, abi: protocolAbi, functionName: 'rejectInvoice', args: [id, failed.label] });
@@ -207,7 +208,7 @@ async function findDuplicate(chainId: number, id: bigint, inv: OnChainInvoice, m
     await Promise.all(
       Object.values(CHAINS).map(async (c) => {
         const protocol = deployments[String(c.id) as keyof typeof deployments].protocol as Hex;
-        const client = createPublicClient({ chain: c, transport: http() });
+        const client = createPublicClient({ chain: c, transport: serverTransport(c.id) });
         const count = await client.readContract({ address: protocol, abi: protocolAbi, functionName: 'invoiceCount' });
         if (count === 0n) return [];
         const list = await client.readContract({ address: protocol, abi: protocolAbi, functionName: 'getInvoices', args: [1n, count] });

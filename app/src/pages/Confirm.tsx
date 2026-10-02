@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useSignMessage } from 'wagmi';
@@ -31,6 +32,7 @@ function ConfirmView({ chainId, id }: { chainId: SupportedChainId; id: bigint })
   const conf = useBuyerConfirmation(chainId, id);
   const { address, kind, passkey, startPasskey } = useAccountSession();
   const { signMessageAsync } = useSignMessage();
+  const queryClient = useQueryClient();
   const [name, setName] = useState<string>();
   const [step, setStep] = useState<'idle' | 'passkey' | 'signing' | 'saving' | 'verifying'>('idle');
   const [error, setError] = useState('');
@@ -72,8 +74,10 @@ function ConfirmView({ chainId, id }: { chainId: SupportedChainId; id: bigint })
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ chainId, invoiceId: id.toString(), buyerName: buyerName.trim(), signer: address, signature }),
       });
-      const out = (await res.json()) as { error?: string };
+      const out = (await res.json()) as { error?: string; confirmation?: unknown };
       if (!res.ok) throw new Error(out.error ?? 'The confirmation was not accepted.');
+      // Show it straight away rather than waiting for the next fetch.
+      queryClient.setQueryData(['buyer-confirmation', chainId, id.toString()], { ...conf.data!, confirmation: out.confirmation });
       if (invoice!.status === 'Submitted') {
         // A larger invoice waits for this signature: run the pre-screen again now that it exists.
         setStep('verifying');
@@ -81,7 +85,7 @@ function ConfirmView({ chainId, id }: { chainId: SupportedChainId; id: bigint })
         const r = (await v.json()) as { status?: string; reason?: string };
         setOutcome(r.status === 'verified' ? 'The invoice passed the pre-screen and is now open for funding.' : r.reason ?? '');
       }
-      await conf.refetch();
+      void conf.refetch();
     } catch (e) {
       const msg = readableError(e);
       setError(msg === 'Something went wrong. Please try again.' ? (e as Error).message : msg);
