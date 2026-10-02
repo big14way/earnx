@@ -23,6 +23,33 @@ const entryPoint = getEntryPoint('0.7');
 const passkeyServerUrl = `https://passkeys.zerodev.app/api/v3/${projectId}`;
 
 type WebAuthnKey = Awaited<ReturnType<typeof toWebAuthnKey>>;
+
+/**
+ * Explains a failed passkey sign-in. The most common cause is configuration: the ZeroDev passkey
+ * server issues challenges for one domain (set in the ZeroDev dashboard), and browsers refuse a
+ * passkey whose domain doesn't match the page.
+ */
+export async function explainPasskeyError(error: unknown): Promise<string> {
+  const message = String((error as Error)?.message ?? error);
+  console.error('Passkey sign-in failed', error);
+  if (/NotAllowedError|cancel|timed out|abort/i.test(message)) return 'The passkey prompt was cancelled or timed out. Please try again.';
+  try {
+    const res = await fetch(`${passkeyServerUrl}/login/options`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ rpID: window.location.hostname }),
+    });
+    const { rpId } = (await res.json()) as { rpId?: string };
+    if (rpId && rpId !== window.location.hostname && !window.location.hostname.endsWith(`.${rpId}`)) {
+      return `Passkeys aren't enabled for ${window.location.hostname} yet (the passkey server is set to "${rpId}"). Use a wallet for now.`;
+    }
+  } catch {
+    // fall through to the raw message
+  }
+  if (/SecurityError|relying party|rp ?id/i.test(message)) return `This browser refused the passkey for this site: ${message}`;
+  if (/sponsor|paymaster|policy/i.test(message)) return 'Gas sponsorship was refused for this network. Try again with a wallet.';
+  return `Passkey sign-in failed: ${message.slice(0, 160)}`;
+}
 type KernelClient = Awaited<ReturnType<typeof buildClient>>;
 
 export async function passkeyLogin(mode: 'register' | 'login', name: string): Promise<WebAuthnKey> {

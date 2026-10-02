@@ -81,7 +81,8 @@ function SignIn() {
     try {
       await startPasskey(mode, name.trim() || 'EarnX exporter');
     } catch (e) {
-      setError(readableError(e));
+      const { explainPasskeyError } = await import('../lib/passkey');
+      setError(await explainPasskeyError(e));
     } finally {
       setBusy(undefined);
     }
