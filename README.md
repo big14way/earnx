@@ -71,6 +71,10 @@ sequenceDiagram
 - **Short and self-liquidating.** Each advance is tied to one shipment and repaid when that buyer pays. Terms are capped at 365 days on-chain.
 - **First-loss reserve.** 1% of every advance, plus any capital partners add, covers investor principal before investors lose anything. It can only be used for that.
 - **Documents you can check.** Each invoice stores the keccak256 of a manifest listing every document and its own hash. A verifier signature is bound to that exact hash.
+- **Know who stands behind it.** Exporters who haven't verified their business are approved automatically only up to $1,000 per invoice. Verification is an on-chain registry (`VERIFIED_EXPORTER_ROLE` on the protocol), granted after a reviewer checks the business against its national registry; the request is encrypted before it is stored.
+- **The buyer confirms the debt.** Above $1,000 the buyer must sign a statement built from the invoice's on-chain facts: they ordered the goods, the invoice is genuine, and they will pay the EarnX contract. Wallet and passkey signatures (ERC-1271 / ERC-6492) are checked and the signed statement is pinned to IPFS for anyone to re-check. A confirmed buyer or a verified business also lowers the risk score, and so the price.
+- **No double financing.** The pre-screen rejects an invoice that reuses any document, the same bundle, or the same invoice number for the same buyer on either chain.
+- **Over-invoicing is caught.** Unit prices are compared with World Bank commodity benchmarks; far above market is rejected.
 - **No hidden levers.** The admin can pause new activity and allow-list stablecoins. It cannot move investor funds.
 
 ## Try it
@@ -99,7 +103,9 @@ The Solidity contracts are source-verified on Blockscout.
 | [`contracts/stylus/risk-engine`](contracts/stylus/risk-engine) | **Rust risk engine on Arbitrum Stylus.** Prices every invoice on-chain from a published formula: APR = 8% + 0.15% per risk point + term and size premiums; advance = 90%, reduced for higher risk and long terms. No storage, no owner; 4.3 KB of WASM with Rust unit tests. |
 | [`app/`](app/) | Vite + React + TypeScript, wagmi + RainbowKit for wallets, ZeroDev Kernel v3.1 for passkey accounts with sponsored gas, Tailwind. ABIs and addresses are generated from `contracts/` so the app cannot drift from the chain. |
 | [`app/api/upload`](app/api/upload.ts) | Serverless function that pins documents to IPFS through Pinata and returns the manifest CID and hash. The Pinata key never reaches the browser. |
-| [`app/api/verify`](app/api/verify.ts) | Automated pre-screen for the testnet: re-fetches the documents from IPFS, checks them against the on-chain hash, applies published rules, and verifies or rejects the invoice with a key that holds `VERIFIER_ROLE` and nothing else. |
+| [`app/api/verify`](app/api/verify.ts) | Automated pre-screen for the testnet: re-fetches the documents from IPFS, checks them against the on-chain hash, the market price and every invoice on both chains for duplicates, applies the business-verification limit and buyer-confirmation rule, then verifies or rejects the invoice with a key that holds `VERIFIER_ROLE` and nothing else. |
+| [`app/api/confirm`](app/api/confirm.ts) | Buyer confirmation: serves the statement for an invoice, checks the buyer's signature (EOA, ERC-1271 or ERC-6492) and pins the signed statement to IPFS, indexed by invoice. |
+| [`app/api/kyb`](app/api/kyb.ts) | Business verification requests, encrypted with AES-256-GCM before they are pinned. [`app/scripts/kyb-requests.mjs`](app/scripts/kyb-requests.mjs) decrypts them for the reviewer and prints the on-chain command that records the result. |
 
 **Why Robinhood Chain and Arbitrum.** Both are Arbitrum chains with low fees and fast blocks. Robinhood Chain is built for real-world assets and has USDG natively; Arbitrum has deep stablecoin liquidity and native USDC. The same contracts run on both.
 
@@ -113,12 +119,13 @@ During the buildathon we:
 - wrote a risk engine in Rust on Arbitrum Stylus that prices every new invoice on-chain, and plugged it into the protocol on both chains;
 - wrote the test suite and CI, then deployed and verified on Robinhood Chain testnet and Arbitrum Sepolia with Paxos USDG;
 - rebuilt the app around live on-chain data (the old one showed hardcoded figures), added passkey accounts with sponsored gas, IPFS uploads and the automated verifier;
+- added the trust layer: tiered limits from an on-chain business-verification registry, signed buyer confirmations, a cross-chain duplicate check, and a World Bank market-price check;
 - removed hardcoded credentials and the unused Morph/Mantle-era code.
 
 ## Security and limitations
 
 - **Testnet only.** The contracts are not audited. Do not use real funds.
-- **Verification is the trust point.** On the testnet an automated pre-screen approves invoices that pass document and limit checks. In production this is where buyer confirmation and a licensed partner's review belong; the contract already accepts any approved verifier, including signed approvals from off-chain reviewers.
+- **Verification is the trust point.** On the testnet an automated pre-screen approves small invoices from unverified exporters and larger ones only with a verified business and the buyer's signature. Business checks are manual today; before mainnet they move to a licensed identity partner, and buyer contacts are verified independently of the exporter (today a buyer is whoever holds the account that signs). The contract already accepts any approved verifier, including signed approvals from off-chain reviewers.
 - **Repayment depends on the buyer.** The reserve softens defaults but cannot remove them. Default rates and reserve levels are shown publicly in the app.
 
 ## Run it locally
