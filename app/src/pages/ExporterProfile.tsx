@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router';
 import { isAddress, type Address } from 'viem';
 import { NftPreview } from '../components/NftPreview';
+import { VerifiedBadge } from '../components/Trust';
 import { Metric, StatusBadge } from '../components/ui';
 import { Reveal, Stagger } from '../components/motion';
 import { useInvoices } from '../hooks/useInvoices';
@@ -35,6 +36,7 @@ function Profile({ chainId, address }: { chainId: SupportedChainId; address: Add
         <h1 className="mt-2 font-display text-4xl font-semibold text-ink sm:text-5xl">
           <a href={explorerUrl(chainId, 'address', address)} target="_blank" rel="noreferrer" className="hover:underline">{shortAddress(address)}</a>
         </h1>
+        <div className="mt-3"><VerifiedBadge chainId={chainId} address={address} /></div>
         <p className="mt-3 max-w-2xl text-lg text-muted">
           Every invoice this exporter has had verified is recorded on-chain as a non-transferable token. Repaid invoices
           build the history banks ask for, and nobody can buy, sell or fake it.

@@ -115,6 +115,15 @@ export class PasskeySession {
     return c;
   }
 
+  /**
+   * Signs a plain-text statement with the passkey. Before the account's first transaction the
+   * signature is wrapped in ERC-6492, which verifiers check without the account being deployed.
+   */
+  async signMessage(chainId: SupportedChainId, message: string): Promise<Hex> {
+    const client = await this.client(chainId);
+    return client.account.signMessage({ message });
+  }
+
   /** Sends one sponsored user operation containing all calls (e.g. approve + invest) and returns the tx hash. */
   async send(chainId: SupportedChainId, calls: { to: Address; data: Hex }[]): Promise<Hex> {
     const client = await this.client(chainId);
