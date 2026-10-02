@@ -1,0 +1,7 @@
+test tests::typical_cocoa_invoice ... ok
+test tests::safest_short_invoice_gets_base_terms ... ok
+test tests::riskier_and_longer_invoices_cost_more_and_advance_less ... ok
+test tests::apr_never_decreases_with_risk ... ok
+test tests::outputs_stay_inside_the_protocol_limits ... ok
+test tests::contract_entrypoint_matches_formula ... ok
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

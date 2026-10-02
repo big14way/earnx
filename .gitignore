@@ -75,3 +75,9 @@ contracts/cache/
 contracts/broadcast/*/31337/
 contracts/broadcast/**/dry-run/
 contracts/deployments/31337.json
+
+# Pitch video: recordings, build cache and the rendered MP4 stay local
+docs/video/clips/
+docs/video/build/
+docs/video/out/
+docs/video/img/mama-dora.jpg

@@ -5,6 +5,7 @@ import { erc20Abi, parseUnits } from 'viem';
 import { protocolAbi } from '../abi/earnx';
 import { DocumentCheck } from '../components/DocumentCheck';
 import { NftPreview } from '../components/NftPreview';
+import { TrustCard } from '../components/Trust';
 import { ActivityCard, DealOverview, ExporterCard, MarketCheckCard, PricingCard, RepaymentTerms, RiskCard, Section } from '../components/InvoiceSections';
 import { useActivity } from '../hooks/useActivity';
 import { useNaira } from '../hooks/useFx';
@@ -29,6 +30,7 @@ export function InvoiceDetail() {
 
 const SECTIONS = [
   ['overview', 'Overview'],
+  ['trust', 'Trust'],
   ['pricing', 'Pricing'],
   ['market', 'Market check'],
   ['documents', 'Documents'],
@@ -101,6 +103,7 @@ function InvoiceView({ chainId, id }: { chainId: SupportedChainId; id: bigint })
           </Card>
 
           <DealOverview invoice={invoice} verifiedAt={verifiedAt} />
+          <TrustCard invoice={invoice} />
           <PricingCard invoice={invoice} verifiedAt={verifiedAt} />
           <MarketCheckCard invoice={invoice} />
           <Section id="timeline" title="Timeline">

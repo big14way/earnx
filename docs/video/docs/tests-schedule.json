@@ -1,0 +1,86 @@
+[
+ {
+  "t": 0.5,
+  "html": "<span class=\"p\">➜</span> <span class=\"dim\">earnx/contracts</span> forge test",
+  "type": true,
+  "cps": 45
+ },
+ {
+  "t": 1.6222222222222222,
+  "html": "Ran 29 tests for test/EarnXProtocol.t.sol:EarnXProtocolTest"
+ },
+ {
+  "t": 2.0722222222222224,
+  "html": "<span class=\"ok\">✓</span> testFuzz_claimsAreProRataAndProtocolStaysSolvent(uint256,uint256,bool,uint256)"
+ },
+ {
+  "t": 2.5222222222222226,
+  "html": "<span class=\"ok\">✓</span> testFuzz_interestNeverExceedsAprOverTenor(uint16,uint40)"
+ },
+ {
+  "t": 2.9722222222222228,
+  "html": "<span class=\"ok\">✓</span> test_riskEngine_overridesVerifierPricing()"
+ },
+ {
+  "t": 3.422222222222223,
+  "html": "<span class=\"ok\">✓</span> test_default_reserveCoversInvestorPrincipal()"
+ },
+ {
+  "t": 3.872222222222223,
+  "html": "<span class=\"ok\">✓</span> test_invest_fullyFundedInvoicePaysExporterInSameTx()"
+ },
+ {
+  "t": 4.322222222222223,
+  "html": "<span class=\"ok\">✓</span> test_recoveryAfterDefault_paysInvestorsThenRefillsReserve()"
+ },
+ {
+  "t": 4.772222222222223,
+  "html": "<span class=\"ok\">✓</span> test_repay_inFull_investorsClaimPrincipalPlusYieldProRata()"
+ },
+ {
+  "t": 5.222222222222223,
+  "html": "<span class=\"ok\">✓</span> test_verifyWithSig_rejectsReplayWrongDocsWrongSignerAndExpiry()"
+ },
+ {
+  "t": 5.672222222222223,
+  "html": "<span class=\"ok\">✓</span> test_verify_opensFundingAndMintsSoulboundRecordToExporter()"
+ },
+ {
+  "t": 6.122222222222224,
+  "html": "Suite result: ok. 29 passed; 0 failed; 0 skipped; finished in 63.91ms (124.80ms CPU time)"
+ },
+ {
+  "t": 7.722222222222223,
+  "html": "<span class=\"p\">➜</span> <span class=\"dim\">contracts/stylus/risk-engine</span> cargo test --lib",
+  "type": true,
+  "cps": 45
+ },
+ {
+  "t": 8.97777777777778,
+  "html": "<span class=\"ok\">✓</span> tests::typical_cocoa_invoice"
+ },
+ {
+  "t": 9.427777777777779,
+  "html": "<span class=\"ok\">✓</span> tests::safest_short_invoice_gets_base_terms"
+ },
+ {
+  "t": 9.877777777777778,
+  "html": "<span class=\"ok\">✓</span> tests::riskier_and_longer_invoices_cost_more_and_advance_less"
+ },
+ {
+  "t": 10.327777777777778,
+  "html": "<span class=\"ok\">✓</span> tests::apr_never_decreases_with_risk"
+ },
+ {
+  "t": 10.777777777777777,
+  "html": "<span class=\"ok\">✓</span> tests::outputs_stay_inside_the_protocol_limits"
+ },
+ {
+  "t": 11.227777777777776,
+  "html": "<span class=\"ok\">✓</span> tests::contract_entrypoint_matches_formula"
+ },
+ {
+  "t": 11.677777777777775,
+  "html": "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+ }
+]

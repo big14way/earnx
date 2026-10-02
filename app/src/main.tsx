@@ -19,6 +19,7 @@ const Exporters = lazy(() => import('./pages/Exporters').then((m) => ({ default:
 const Portfolio = lazy(() => import('./pages/Portfolio').then((m) => ({ default: m.Portfolio })));
 const HowItWorks = lazy(() => import('./pages/HowItWorks').then((m) => ({ default: m.HowItWorks })));
 const ExporterProfile = lazy(() => import('./pages/ExporterProfile').then((m) => ({ default: m.ExporterProfile })));
+const Confirm = lazy(() => import('./pages/Confirm').then((m) => ({ default: m.Confirm })));
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ createRoot(document.getElementById('root')!).render(
                   <Route path="portfolio" element={<Portfolio />} />
                   <Route path="how-it-works" element={<HowItWorks />} />
                   <Route path="exporter/:chainId/:address" element={<ExporterProfile />} />
+                  <Route path="confirm/:chainId/:id" element={<Confirm />} />
                   <Route
                     path="*"
                     element={

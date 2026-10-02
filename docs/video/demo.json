@@ -1,0 +1,681 @@
+{
+ "clips_dir": "clips",
+ "work_dir": "build",
+ "output": "out/earnx-pitch.mp4",
+ "voice": "en-US-AndrewMultilingualNeural",
+ "voice_rate": "+14%",
+ "voice_tempo": 1.0,
+ "crossfade": 0.6,
+ "sfx_gain": 0.6,
+ "brand": {
+  "name": "EarnX",
+  "domain": "earnx-app.vercel.app",
+  "paper": "#0a160f",
+  "paper_deep": "#10231a",
+  "ink": "#f6f1e7",
+  "ink_soft": "#cfd8d2",
+  "ink_faint": "#4b6355",
+  "accent": "#c8f169",
+  "accent_soft": "#e6f7b8",
+  "card": "#10231a"
+ },
+ "scenes": [
+  {
+   "id": "s0",
+   "kind": "title",
+   "image": "img/bg.jpg",
+   "tagline": "Invoice financing for African exporters. Get paid when you ship, not when your buyer pays.",
+   "tag": "Arbitrum Open House Singapore · Robinhood Chain · Paxos USDG",
+   "vo": "This is EarnX: invoice financing for African exporters, on Robinhood Chain and Arbitrum."
+  },
+  {
+   "id": "p1",
+   "kind": "slide",
+   "image": "img/mama-dora.jpg",
+   "voice_rate": "+6%",
+   "label": "Why I'm building this",
+   "head": "My mother, Mama Dora, grows cassava and other crops in Delta State, Nigeria.",
+   "bullets": [
+    {
+     "k": "Just after harvest",
+     "v": "The most to show, and the least cash in hand."
+    },
+    {
+     "k": "My father's stroke",
+     "v": "The hospital needed money that week."
+    },
+    {
+     "k": "Sold cheap, then the bank",
+     "v": "Fees and interest that bankrupted us."
+    }
+   ],
+   "vo": "My mother, Mama Dora, grows cassava and other crops in Delta State, Nigeria. Just after harvest, my father had a stroke, and the hospital needed money that week. Her harvest was worth more than the bill, but it wasn't cash yet. We sold crops cheaply, then borrowed from a bank, and the fees and interest bankrupted us."
+  },
+  {
+   "id": "p2",
+   "kind": "slide",
+   "image": "img/panel-problem.jpg",
+   "label": "The gap",
+   "head": "Millions of African exporters hit the same wall.",
+   "bullets": [
+    {
+     "k": "74 to 92 billion dollars",
+     "v": "of trade finance requested by African businesses went unmet in 2024 (AfDB)."
+    },
+    {
+     "k": "37% rejected",
+     "v": "of trade finance applications from African firms, 2020 to 2024 (AfDB)."
+    }
+   ],
+   "vo": "Millions of African exporters hit the same wall. In 2024, seventy-four to ninety-two billion dollars of their trade finance requests went unmet."
+  },
+  {
+   "id": "p3",
+   "kind": "slide",
+   "image": "img/panel-cost.jpg",
+   "label": "Bank versus EarnX",
+   "head": "A sixty-day invoice: about 7% at a Nigerian bank, about 3% on EarnX.",
+   "bullets": [
+    {
+     "k": "Bank",
+     "v": "29.2% a year (CBN, Aug 2026), up to 2% in fees, collateral, weeks of waiting."
+    },
+    {
+     "k": "EarnX",
+     "v": "12.35% a year for the term, plus 1% to the reserve. No collateral."
+    },
+    {
+     "k": "Paid at once",
+     "v": "In the transaction that completes the funding."
+    }
+   ],
+   "vo": "For a sixty-day invoice, a Nigerian bank costs about seven percent, plus collateral and weeks of waiting. EarnX costs about three, paid out the moment it's funded."
+  },
+  {
+   "id": "p4",
+   "kind": "slide",
+   "label": "How EarnX works",
+   "head": "An invoice becomes an on-chain asset.",
+   "bullets": [
+    {
+     "k": "Submit",
+     "v": "Invoice and documents; their hash goes on-chain."
+    },
+    {
+     "k": "Verify, price, confirm",
+     "v": "Checks, a Rust engine sets the terms, the buyer signs."
+    },
+    {
+     "k": "Fund",
+     "v": "Investors fund in USDG; the exporter is paid at once."
+    },
+    {
+     "k": "Repay and claim",
+     "v": "The buyer pays; investors claim pro-rata."
+    }
+   ],
+   "diagram": {
+    "boxes": [
+     {
+      "id": "exporter",
+      "box": [
+       36,
+       36,
+       320,
+       126
+      ],
+      "title": "Exporter",
+      "sub": "passkey, no gas"
+     },
+     {
+      "id": "engine",
+      "box": [
+       390,
+       36,
+       674,
+       126
+      ],
+      "title": "Rust risk engine",
+      "sub": "Stylus: APR + advance"
+     },
+     {
+      "id": "protocol",
+      "box": [
+       36,
+       280,
+       404,
+       390
+      ],
+      "title": "EarnX protocol",
+      "sub": "Robinhood Chain, Arbitrum",
+      "accent": true
+     },
+     {
+      "id": "investors",
+      "box": [
+       462,
+       280,
+       674,
+       390
+      ],
+      "title": "Investors",
+      "sub": "fund in USDG"
+     },
+     {
+      "id": "buyer",
+      "box": [
+       36,
+       540,
+       320,
+       630
+      ],
+      "title": "Buyer",
+      "sub": "confirms, then repays"
+     },
+     {
+      "id": "reserve",
+      "box": [
+       390,
+       540,
+       674,
+       630
+      ],
+      "title": "First-loss reserve",
+      "sub": "1% of each advance"
+     }
+    ],
+    "arrows": [
+     {
+      "from": [
+       250,
+       126
+      ],
+      "to": [
+       250,
+       280
+      ],
+      "label": "invoice + docs hash",
+      "label_at": [
+       262,
+       200
+      ],
+      "anchor": "lm"
+     },
+     {
+      "from": [
+       100,
+       280
+      ],
+      "to": [
+       100,
+       126
+      ],
+      "soft": true,
+      "label": "paid, same tx",
+      "label_at": [
+       88,
+       214
+      ],
+      "anchor": "rm"
+     },
+     {
+      "from": [
+       532,
+       126
+      ],
+      "to": [
+       380,
+       280
+      ],
+      "label": "prices it",
+      "label_at": [
+       478,
+       214
+      ],
+      "anchor": "lm"
+     },
+     {
+      "from": "investors",
+      "from_side": "left",
+      "to": "protocol",
+      "to_side": "right",
+      "label": "USDG",
+      "label_at": [
+       433,
+       266
+      ],
+      "anchor": "mm"
+     },
+     {
+      "from": [
+       178,
+       540
+      ],
+      "to": [
+       178,
+       390
+      ],
+      "label": "repays",
+      "label_at": [
+       192,
+       466
+      ],
+      "anchor": "lm"
+     },
+     {
+      "from": [
+       340,
+       390
+      ],
+      "to": [
+       480,
+       540
+      ],
+      "soft": true,
+      "label": "1% fee",
+      "label_at": [
+       424,
+       452
+      ],
+      "anchor": "lm"
+     }
+    ],
+    "note": "Investors claim principal plus yield, pro-rata."
+   },
+   "vo": "Here's the flow: priced on-chain by a Rust engine, confirmed by the buyer, funded in USDG, repaid, and claimed."
+  },
+  {
+   "id": "d1",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "landing.webm",
+   "cut": [
+    5,
+    19
+   ],
+   "crop": [
+    1920,
+    1080,
+    0,
+    0
+   ],
+   "max_speed": 2.6,
+   "step": "01",
+   "head": "Live on Robinhood Chain and Arbitrum",
+   "sub": "Every number is read from the contracts; the globe draws each invoice's route.",
+   "vo": "It's live on both chains, and every number on screen is read from the contracts."
+  },
+  {
+   "id": "d2",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "exporter.webm",
+   "cut": [
+    [
+     4.5,
+     10.5
+    ],
+    [
+     16.5,
+     24
+    ]
+   ],
+   "crop": [
+    1920,
+    1080,
+    0,
+    0
+   ],
+   "max_speed": 2.0,
+   "step": "02",
+   "head": "An exporter signs in with a passkey",
+   "sub": "No wallet app, no seed phrase, no gas: a ZeroDev smart account with sponsored fees.",
+   "vo": "An exporter signs in with a passkey: no wallet app, no seed phrase, no gas, thanks to a ZeroDev smart account."
+  },
+  {
+   "id": "d3",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "exporter.webm",
+   "cut": [
+    [
+     26,
+     40
+    ],
+    [
+     43,
+     47
+    ]
+   ],
+   "crop": [
+    1920,
+    1080,
+    0,
+    0
+   ],
+   "max_speed": 2.6,
+   "step": "03",
+   "head": "Invoice and documents, submitted on-chain",
+   "sub": "The documents go to IPFS; the invoice, its number and their hash go on Robinhood Chain.",
+   "vo": "She enters the shipment and her invoice number, attaches the invoice and bill of lading, and submits. The documents go to IPFS; their hash goes on-chain."
+  },
+  {
+   "id": "d4",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "exporter.webm",
+   "cut": [
+    [
+     59.5,
+     77
+    ]
+   ],
+   "crop": [
+    1920,
+    1080,
+    0,
+    0
+   ],
+   "max_speed": 1.9,
+   "step": "04",
+   "head": "Checked, priced in Rust, sent to the buyer",
+   "sub": "Hash match, no duplicate on either chain, the $1,000 limit for unverified exporters, then the Stylus engine sets the APR.",
+   "vo": "Seconds later it's verified: documents match, no duplicate on either chain, within the limit for unverified exporters, and our Rust Stylus contract sets the yield. Then she sends her buyer a link."
+  },
+  {
+   "id": "d5",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "exporter.webm",
+   "cut": [
+    [
+     81,
+     93
+    ],
+    [
+     100,
+     103
+    ],
+    [
+     109,
+     113
+    ]
+   ],
+   "crop": [
+    1920,
+    1080,
+    0,
+    0
+   ],
+   "max_speed": 2.4,
+   "step": "05",
+   "head": "Her deal sheet: who stands behind it",
+   "sub": "Business verification status, buyer confirmation, pricing line by line, and her soulbound record.",
+   "vo": "Still signed in, she sees her deal sheet: who stands behind it, the pricing line by line, and a soulbound token minted as her record."
+  },
+  {
+   "id": "d5b",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "buyerconfirm.webm",
+   "cut": [
+    [
+     6,
+     18
+    ],
+    [
+     39.5,
+     47
+    ]
+   ],
+   "crop": [
+    1920,
+    1080,
+    0,
+    0
+   ],
+   "max_speed": 2.4,
+   "step": "06",
+   "head": "The buyer confirms the debt",
+   "sub": "A statement built from the on-chain facts, signed by the buyer's wallet or passkey, pinned to IPFS.",
+   "vo": "Her buyer opens the link, reads exactly what they're signing, and confirms with one signature, pinned to IPFS for every investor to check."
+  },
+  {
+   "id": "d7",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "invest.webm",
+   "cut": [
+    [
+     11,
+     16.5
+    ],
+    [
+     20.5,
+     34
+    ],
+    [
+     36,
+     40
+    ]
+   ],
+   "crop": [
+    1920,
+    1080,
+    0,
+    0
+   ],
+   "max_speed": 2.6,
+   "step": "07",
+   "head": "Buyer confirmed, so an investor funds it",
+   "sub": "The investment completes the funding, pays the exporter and sends 1% to the reserve, in one transaction.",
+   "vo": "An investor sees the buyer has confirmed and funds it in USDG. That one transaction pays the exporter about forty dollars and turns her token to funded."
+  },
+  {
+   "id": "d8",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "repay.webm",
+   "cut": [
+    [
+     12,
+     23
+    ],
+    [
+     28,
+     32
+    ]
+   ],
+   "crop": [
+    1920,
+    1080,
+    0,
+    0
+   ],
+   "max_speed": 2.4,
+   "step": "08",
+   "head": "The buyer repays",
+   "sub": "Principal plus the invoice's APR for its term.",
+   "vo": "When the buyer pays, principal plus yield lands on-chain, and her token reads repaid."
+  },
+  {
+   "id": "d9",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "claim.webm",
+   "cut": [
+    [
+     8.5,
+     20.5
+    ],
+    [
+     139,
+     142.5
+    ]
+   ],
+   "crop": [
+    1920,
+    1080,
+    0,
+    0
+   ],
+   "max_speed": 2.4,
+   "step": "09",
+   "head": "Investors claim principal plus yield",
+   "sub": "40.50 USDG in, 40.91 back: 12.2% a year for 30 days, paid pro-rata.",
+   "vo": "The investor claims forty ninety-one for forty and a half: twelve percent a year, for thirty days."
+  },
+  {
+   "id": "dx",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "explorer.webm",
+   "cut": [
+    [
+     16,
+     25
+    ],
+    [
+     34,
+     39
+    ]
+   ],
+   "crop": [
+    1920,
+    1080,
+    0,
+    0
+   ],
+   "max_speed": 1.8,
+   "step": "10",
+   "head": "Every step is public",
+   "sub": "Robinhood Chain's explorer: the investor's USDG in, the exporter's payout out, then the buyer's repayment.",
+   "vo": "Every step is public: on Robinhood Chain's explorer, the investor's USDG goes in, her payout comes out, and the buyer's repayment follows."
+  },
+  {
+   "id": "d10",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "record.webm",
+   "cut": [
+    5.5,
+    20
+   ],
+   "crop": [
+    1920,
+    1080,
+    0,
+    0
+   ],
+   "max_speed": 2.0,
+   "step": "11",
+   "head": "A credit history she owns",
+   "sub": "A non-transferable record no one can buy, sell or fake.",
+   "vo": "Her page now shows a repaid invoice: a credit history she owns, that no one can buy, sell or fake."
+  },
+  {
+   "id": "d12",
+   "kind": "laptop",
+   "layout": "wide",
+   "src": "tests.webm",
+   "cut": [
+    0,
+    14.5
+   ],
+   "crop": [
+    1440,
+    810,
+    80,
+    50
+   ],
+   "max_speed": 2.0,
+   "step": "12",
+   "head": "Tested like it holds real money",
+   "sub": "29 Foundry tests including fuzzing, 6 Rust tests for the engine, CI on every push.",
+   "vo": "Twenty-nine Foundry tests, including fuzzing, and six Rust tests for the engine run on every push."
+  },
+  {
+   "id": "p5",
+   "kind": "slide",
+   "image": "img/panel-contracts.jpg",
+   "label": "Why Robinhood Chain",
+   "head": "Built where real-world assets and dollars live.",
+   "bullets": [
+    {
+     "k": "Robinhood Chain",
+     "v": "built for real-world assets"
+    },
+    {
+     "k": "Paxos USDG",
+     "v": "native settlement; USDC too"
+    },
+    {
+     "k": "Arbitrum Stylus",
+     "v": "the risk engine, in Rust"
+    },
+    {
+     "k": "ZeroDev",
+     "v": "passkeys and sponsored gas"
+    },
+    {
+     "k": "OpenZeppelin",
+     "v": "roles, EIP-712, safe transfers"
+    },
+    {
+     "k": "Alchemy",
+     "v": "RPC behind a private proxy"
+    }
+   ],
+   "vo": "Robinhood Chain is built for real-world assets with USDG native, and Stylus runs our risk engine in Rust.",
+   "columns": 2
+  },
+  {
+   "id": "p7",
+   "kind": "slide",
+   "image": "img/panel-pricing.jpg",
+   "label": "Model, traction, next",
+   "head": "Live on two testnets. Every transaction is public.",
+   "bullets": [
+    {
+     "k": "Model",
+     "v": "1% of each advance funds the investors' reserve; an EarnX origination fee comes next."
+    },
+    {
+     "k": "On-chain",
+     "v": "36 invoices on two testnets, samples and tests so far; 5 repaid in full."
+    },
+    {
+     "k": "Next",
+     "v": "A licensed identity partner for business checks, then our first real exporters."
+    }
+   ],
+   "vo": "One percent of each advance funds the reserve; an origination fee comes next. Thirty-six invoices so far, five repaid. Next: a licensed identity partner, then real exporters."
+  },
+  {
+   "id": "s99",
+   "kind": "end",
+   "image": "img/mama-dora-end.jpg",
+   "lines": [
+    "Get paid when you ship,",
+    "not when your buyer pays."
+   ],
+   "links": [
+    [
+     "App",
+     "earnx-app.vercel.app"
+    ],
+    [
+     "Code",
+     "github.com/big14way/earnx"
+    ],
+    [
+     "Built for",
+     "farmers like Mama Dora"
+    ]
+   ],
+   "footer": "Robinhood Chain · Arbitrum · Paxos USDG · Stylus · ZeroDev",
+   "vo": "EarnX. Get paid when you ship, not when your buyer pays. Built for farmers like Mama Dora.",
+   "hold": 0.75
+  }
+ ]
+}

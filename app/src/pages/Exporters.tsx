@@ -17,6 +17,8 @@ import { passkeysEnabled } from '../lib/passkeyConfig';
 import { percentFromBps } from '../lib/format';
 import { benchmarkFor, compareToMarket } from '../lib/market';
 import { useNaira } from '../hooks/useFx';
+import { BusinessVerification, CopyLink } from '../components/Trust';
+import { confirmLink } from '../hooks/useTrust';
 
 const AFRICAN_COUNTRIES = [
   'Nigeria', 'Ghana', 'Kenya', "Cote d'Ivoire", 'South Africa', 'Ethiopia', 'Tanzania', 'Uganda', 'Rwanda',
@@ -26,10 +28,11 @@ const AFRICAN_COUNTRIES = [
 type Verdict =
   | { status: 'verified'; riskScore: number; aprBps: number; advanceBps: number; checks: Check[]; factors: string[]; txHash: Hex }
   | { status: 'rejected'; reason: string; checks: Check[]; txHash: Hex }
+  | { status: 'review' | 'waiting-buyer'; reason: string; checks: Check[] }
   | { status: 'skipped'; reason: string }
   | { status: 'pending'; reason: string }
   | { status?: undefined; error: string };
-type Check = { ok: boolean; label: string };
+type Check = { ok: boolean; label: string; soft?: boolean };
 
 export function Exporters() {
   useTitle('Get paid early');
@@ -53,6 +56,7 @@ export function Exporters() {
           <div className="mt-8 flex items-center gap-3 text-sm text-muted">
             Network: <ChainSwitcher />
           </div>
+          {address && <BusinessVerification chainId={chainId} address={address} />}
         </div>
         <div>{address ? <SubmitForm /> : <SignIn />}</div>
       </div>
@@ -155,7 +159,7 @@ function SubmitForm() {
       setStep('uploading');
       const upload = new FormData();
       files.forEach((f) => upload.append('files', f));
-      for (const k of ['quantity', 'unitPrice', 'incoterms'] as const) upload.append(k, String(form.get(k) ?? ''));
+      for (const k of ['quantity', 'unitPrice', 'incoterms', 'invoiceNumber'] as const) upload.append(k, String(form.get(k) ?? ''));
       upload.append('unit', 't');
       const res = await fetch('/api/upload', { method: 'POST', body: upload });
       const docs = (await res.json()) as { cid?: string; docsHash?: Hex; error?: string };
@@ -226,8 +230,11 @@ function SubmitForm() {
         <Field label="To (country)">
           <input name="destination" required maxLength={40} placeholder="e.g. Ghana" className={inputCls} />
         </Field>
-        <Field label="Buyer" className="sm:col-span-2">
+        <Field label="Buyer">
           <input name="buyer" required maxLength={80} placeholder="Company name and city" className={inputCls} />
+        </Field>
+        <Field label="Your invoice number">
+          <input name="invoiceNumber" required maxLength={40} placeholder="e.g. INV-2026-014" className={inputCls} />
         </Field>
         <Field label="Quantity (tonnes)">
           <input name="quantity" inputMode="decimal" placeholder="16" value={quantity}
@@ -289,13 +296,18 @@ function Result({ verdict, chainId, id, onAnother }: { verdict?: Verdict; chainI
     );
   }
   const ok = verdict.status === 'verified';
+  const held = verdict.status === 'review' || verdict.status === 'waiting-buyer';
   return (
     <Card className="p-6 sm:p-8">
-      <div className={`text-xs font-semibold uppercase tracking-wider ${ok ? 'text-leaf' : 'text-clay'}`}>
-        Automated pre-screen · {ok ? 'approved' : 'not approved'}
+      <div className={`text-xs font-semibold uppercase tracking-wider ${ok ? 'text-leaf' : held ? 'text-gold' : 'text-clay'}`}>
+        Automated pre-screen · {ok ? 'approved' : held ? 'in review' : 'not approved'}
       </div>
       <h3 className="mt-2 font-display text-2xl font-semibold">
-        {ok ? `Invoice #${id} is open for funding` : `Invoice #${id} needs another look`}
+        {ok
+          ? `Invoice #${id} is open for funding`
+          : verdict.status === 'waiting-buyer'
+            ? `Invoice #${id} is waiting for your buyer`
+            : held ? `Invoice #${id} is waiting for a review` : `Invoice #${id} needs another look`}
       </h3>
       {ok && (
         <p className="mt-2 text-ink-soft">
@@ -306,15 +318,18 @@ function Result({ verdict, chainId, id, onAnother }: { verdict?: Verdict; chainI
       {!ok && <p className="mt-2 text-ink-soft">{verdict.reason}</p>}
       <ul className="mt-5 space-y-1.5 text-sm">
         {verdict.checks.map((c) => (
-          <li key={c.label} className={c.ok ? 'text-ink' : 'text-clay'}>{c.ok ? '✓' : '✗'} {c.label}</li>
+          <li key={c.label} className={c.ok ? 'text-ink' : c.soft ? 'text-gold' : 'text-clay'}>{c.ok ? '✓' : c.soft ? '…' : '✗'} {c.label}</li>
         ))}
         {ok && verdict.factors.map((f) => <li key={f} className="text-muted">· {f}</li>)}
       </ul>
+      {verdict.status !== 'rejected' && <CopyLink label="Ask your buyer to confirm the invoice: send them this link" url={confirmLink(chainId, id)} />}
       <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
         <Link to={link} className="rounded-full bg-ink px-5 py-2.5 text-paper">Open the invoice</Link>
-        <a href={explorerUrl(chainId, 'tx', verdict.txHash)} target="_blank" rel="noreferrer" className="rounded-full border border-line px-5 py-2.5">
-          Verifier transaction ↗
-        </a>
+        {'txHash' in verdict && (
+          <a href={explorerUrl(chainId, 'tx', verdict.txHash)} target="_blank" rel="noreferrer" className="rounded-full border border-line px-5 py-2.5">
+            Verifier transaction ↗
+          </a>
+        )}
         <button onClick={onAnother} className="px-2 text-muted underline">Submit another</button>
       </div>
     </Card>
