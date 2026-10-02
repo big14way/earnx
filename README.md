@@ -8,6 +8,18 @@ EarnX turns a verified export invoice into cash for an African exporter today. I
 
 ---
 
+## For judges: the five-minute tour
+
+| | |
+|---|---|
+| **Live app** | [earnx-app.vercel.app](https://earnx-app.vercel.app) (Robinhood Chain testnet by default; switch to Arbitrum in the header) |
+| **One invoice, every step on-chain** | [Invoice #19 on Robinhood Chain](https://earnx-app.vercel.app/invoice/46630/19): [submitted](https://explorer.testnet.chain.robinhood.com/tx/0x4b577606b6463a0d1bf9e2dcac9dc4a56e97a7d8bb90abae3776b32063b76217) by a passkey account → [verified, priced by the Stylus engine, record minted](https://explorer.testnet.chain.robinhood.com/tx/0x95b85e78f9836963c8e5ce1412f23d616a59abb6c8095bd7ff662b5d65c825f2) → buyer confirmed (signed statement on IPFS) → [funded, exporter paid in the same transaction](https://explorer.testnet.chain.robinhood.com/tx/0xf0330a8a0398ac2c4bc9c0f381d916d7922513921cd01b02fbd597692967be3e) → [repaid by the buyer](https://explorer.testnet.chain.robinhood.com/tx/0x4995f7ef55885c70fef66b18b4760cca4f7bca2b81cccb4dd2d212e28b0311a5) → [claimed by the investor](https://explorer.testnet.chain.robinhood.com/tx/0x8118c43893d9b530d2d7b1bf9cd9779f46e30c4985403af968073177dc7a19a1) |
+| **Contracts** | [Deployments](#deployments), source-verified on Blockscout · [Solidity](contracts/src) · [Rust risk engine](contracts/stylus/risk-engine/src/lib.rs) |
+| **Tests** | 29 Foundry tests including fuzzing, 6 Rust tests, run in [CI](.github/workflows/contracts.yml) on every push |
+| **Sponsor technology** | [Where each one is used](#sponsor-technology) |
+| **Demo video** | On the HackQuest project page; its script and every transaction it shows are in [`docs/video`](docs/video) |
+
+
 ## The problem
 
 A confirmed export order is not cash. An exporter pays farmers, processors and freight up front, then waits weeks or months for the buyer to pay. Banks rarely lend against those invoices, so good orders are turned down, or sold to middlemen at a discount.
@@ -51,21 +63,60 @@ I built EarnX so that the value of work already done reaches people when they ne
 
 ```mermaid
 sequenceDiagram
-    participant E as Exporter
-    participant V as Verifier
+    autonumber
+    actor E as Exporter (passkey)
+    participant S as Pre-screen (/api/verify)
+    participant C as Buyer confirmation (/api/confirm)
     participant P as EarnXProtocol
-    participant I as Investors
-    participant B as Buyer
+    participant R as Risk engine (Stylus)
+    actor B as Buyer
+    actor I as Investors
     E->>P: submitInvoice(amount, due date, buyer, docs CID + hash)
-    V->>P: verifyInvoice(risk score)
-    P->>P: Rust risk engine (Stylus) sets APR + advance
-    P-->>E: soulbound invoice NFT (trade record)
+    E->>S: run the pre-screen
+    S->>S: documents match the hash · quantity × price = total<br/>World Bank price · no duplicate on either chain · exporter's limit
+    opt invoice above $1,000
+        B->>C: sign the statement built from the on-chain facts
+        C-->>S: signed statement on IPFS
+    end
+    S->>P: verifyInvoice(risk score), or rejectInvoice(reason)
+    P->>R: quote(risk score, tenor, amount)
+    R-->>P: APR + advance
+    P-->>E: soulbound record NFT minted
     I->>P: invest(USDG)
-    P-->>E: advance paid automatically when fully funded (minus 1% to the reserve)
-    B->>P: repay(principal + interest), in parts or in full
-    I->>P: claim() pro-rata share
-    Note over P: Past due + 30-day grace: anyone can markDefault.<br/>The first-loss reserve covers investor principal,<br/>and later recoveries refill it.
+    P-->>E: advance paid in the transaction that completes funding (1% to the reserve)
+    B->>P: repay(amount), in parts or in full
+    I->>P: claim() pro-rata principal + yield
+    Note over P: Past due + grace period: anyone can markDefault.<br/>The first-loss reserve covers investor principal, and recoveries refill it.
 ```
+
+**Invoice lifecycle**, enforced by `EarnXProtocol`:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Submitted: submitInvoice
+    Submitted --> Funding: verifyInvoice / verifyInvoiceWithSig
+    Submitted --> Rejected: rejectInvoice
+    Submitted --> Cancelled: cancelInvoice
+    Funding --> Funded: invest reaches the target, exporter paid
+    Funding --> Cancelled: cancelInvoice (refunds investors)
+    Funded --> Repaid: repay in full
+    Funded --> Defaulted: markDefault after due date + grace
+    Defaulted --> Defaulted: repay (recoveries)
+```
+
+**Pricing** is computed on-chain by the Rust engine from a published formula, so nobody, including EarnX, can override it:
+
+- APR = 8% + 0.15% per risk point + 0.01% per 3 days of term beyond 30 + 0.25% above $50k or 0.5% above $100k, kept between 5% and 50%.
+- Advance = 90% − 0.25% per risk point above 30 − 5% for terms over 120 days, kept between 70% and 90%.
+- Risk scores above 80 cannot be funded.
+
+**Who stands behind an invoice**
+
+| | Exporter not verified | Business verified |
+|---|---|---|
+| Approved automatically up to | $1,000 per invoice | $250,000 per invoice |
+| Buyer confirmation | Optional, shown to investors | Required above $1,000 |
+| Effect on the risk score | | −5, and −5 more once the buyer confirms |
 
 **What keeps it honest**
 - **Short and self-liquidating.** Each advance is tied to one shipment and repaid when that buyer pays. Terms are capped at 365 days on-chain.
@@ -97,6 +148,47 @@ The Solidity contracts are source-verified on Blockscout.
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    subgraph web["Web app · React + Vite"]
+        UI["Exporter · buyer · investor pages"]
+    end
+    subgraph acct["Accounts"]
+        PK["Passkey smart account<br/>ZeroDev Kernel v3.1 · ERC-4337"]
+        WL["Browser wallet<br/>wagmi + RainbowKit"]
+    end
+    subgraph api["Serverless functions · Vercel"]
+        UP["/api/upload"]
+        VF["/api/verify · pre-screen"]
+        CF["/api/confirm · buyer statements"]
+        KY["/api/kyb · encrypted requests"]
+        RP["/api/rpc · read-only proxy"]
+    end
+    subgraph chain["Robinhood Chain testnet · Arbitrum Sepolia"]
+        P["EarnXProtocol<br/>Solidity · OpenZeppelin 5.7"]
+        RE["Risk engine<br/>Rust on Arbitrum Stylus"]
+        NFT["EarnXInvoiceNFT<br/>ERC-5192 soulbound"]
+        TK[("Paxos USDG · Circle USDC")]
+    end
+    IP[("IPFS via Pinata")]
+    AL[("Alchemy")]
+    WB[("World Bank Pink Sheet")]
+    UI --> PK & WL
+    PK -- "sponsored user operations" --> P
+    WL -- "transactions" --> P
+    UI --> UP & VF & CF & KY & RP
+    UP --> IP
+    CF --> IP
+    KY -- "AES-256-GCM" --> IP
+    VF -- "VERIFIER_ROLE key" --> P
+    VF -. "documents" .-> IP
+    VF -. "benchmarks" .-> WB
+    RP --> AL --> P
+    P -- "quote()" --> RE
+    P -- "mint, status" --> NFT
+    P <-->|"stablecoins in and out"| TK
+```
+
 | Part | What it is |
 |---|---|
 | [`contracts/`](contracts/) | Foundry project. `EarnXProtocol` (lifecycle, pricing, reserve) and `EarnXInvoiceNFT` (ERC-5192 soulbound records with on-chain SVG metadata). OpenZeppelin 5.7: AccessControl, SafeERC20, ReentrancyGuard, Pausable, EIP-712, Nonces. 29 tests including fuzz tests; CI on every push. |
@@ -107,11 +199,31 @@ The Solidity contracts are source-verified on Blockscout.
 | [`app/api/confirm`](app/api/confirm.ts) | Buyer confirmation: serves the statement for an invoice, checks the buyer's signature (EOA, ERC-1271 or ERC-6492) and pins the signed statement to IPFS, indexed by invoice. |
 | [`app/api/kyb`](app/api/kyb.ts) | Business verification requests, encrypted with AES-256-GCM before they are pinned. [`app/scripts/kyb-requests.mjs`](app/scripts/kyb-requests.mjs) decrypts them for the reviewer and prints the on-chain command that records the result. |
 
+```
+contracts/              Foundry project: EarnXProtocol, EarnXInvoiceNFT, tests, deploy and seed scripts
+contracts/stylus/       Rust risk engine for Arbitrum Stylus
+app/                    React app
+app/api/                Serverless functions: upload, verify, confirm, kyb, rpc, prices
+app/scripts/            Contract sync, World Bank benchmark sync, business-verification review
+docs/video/             The pitch video's script, recorder config and the transactions it shows
+```
+
+### Sponsor technology
+
+| Technology | How EarnX uses it | Where |
+|---|---|---|
+| Robinhood Chain | Main deployment; the app's default network | [`contracts/deployments/46630.json`](contracts/deployments/46630.json) |
+| Paxos USDG | The settlement stablecoin on both chains: investments, payouts, repayments, claims | [`contracts/deployments/`](contracts/deployments/) |
+| Arbitrum Stylus | The risk engine that prices every invoice, written in Rust | [`contracts/stylus/risk-engine`](contracts/stylus/risk-engine) |
+| ZeroDev | Passkey smart accounts and the paymaster that sponsors exporters' gas | [`app/src/lib/passkey.ts`](app/src/lib/passkey.ts) |
+| OpenZeppelin | AccessControl, SafeERC20, ReentrancyGuard, Pausable, EIP-712, Nonces | [`contracts/src`](contracts/src) |
+| Alchemy | RPC for the app (behind a read-only proxy) and for the serverless functions | [`app/api/rpc.ts`](app/api/rpc.ts), [`app/src/lib/serverRpc.ts`](app/src/lib/serverRpc.ts) |
+
 **Why Robinhood Chain and Arbitrum.** Both are Arbitrum chains with low fees and fast blocks. Robinhood Chain is built for real-world assets and has USDG natively; Arbitrum has deep stablecoin liquidity and native USDC. The same contracts run on both.
 
 ## Built during the Arbitrum Open House Singapore buildathon
 
-Everything before the buildathon is tagged [`pre-buildathon`](https://github.com/big14way/earnx/tree/pre-buildathon) (an earlier Mantle Sepolia version). **[See every change since →](https://github.com/big14way/earnx/compare/pre-buildathon...main)**
+Everything before the buildathon is tagged [`pre-buildathon`](https://github.com/big14way/earnx/tree/pre-buildathon) (an earlier Mantle Sepolia version). **[See every change since →](https://github.com/big14way/earnx/compare/pre-buildathon...main)** EarnX also had an earlier Arbitrum prototype, entered in Arbitrum Open House NYC from a separate codebase; none of that code is in this repository.
 
 During the buildathon we:
 - rewrote the contracts from scratch: the previous contract accepted deposits but had no payout, repayment or claim path, and approved every invoice automatically;
